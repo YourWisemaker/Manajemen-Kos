@@ -91,10 +91,7 @@ const ILLUSTRATIONS: Record<EmptyIllustration, React.ReactNode> = {
   penghuni: (
     <g strokeWidth="2" strokeLinejoin="round" strokeLinecap="round">
       <circle cx="48" cy="42" r="9" className="fill-card stroke-brand-pandan-600" />
-      <path
-        d="M32 68 C32 56 64 56 64 68"
-        className="fill-card stroke-brand-pandan-600"
-      />
+      <path d="M32 68 C32 56 64 56 64 68" className="fill-card stroke-brand-pandan-600" />
     </g>
   ),
   // Tagihan: a document with lines.
@@ -112,9 +109,27 @@ const ILLUSTRATIONS: Record<EmptyIllustration, React.ReactNode> = {
   laporan: (
     <g strokeWidth="2" strokeLinejoin="round" strokeLinecap="round">
       <path d="M32 66 H66" className="stroke-brand-pandan-900" />
-      <rect x="38" y="50" width="7" height="16" className="fill-brand-pandan-300 stroke-brand-pandan-600" />
-      <rect x="50" y="42" width="7" height="24" className="fill-brand-kunyit stroke-brand-pandan-600" />
-      <rect x="62" y="34" width="7" height="32" className="fill-brand-pandan-600 stroke-brand-pandan-600" />
+      <rect
+        x="38"
+        y="50"
+        width="7"
+        height="16"
+        className="fill-brand-pandan-300 stroke-brand-pandan-600"
+      />
+      <rect
+        x="50"
+        y="42"
+        width="7"
+        height="24"
+        className="fill-brand-kunyit stroke-brand-pandan-600"
+      />
+      <rect
+        x="62"
+        y="34"
+        width="7"
+        height="32"
+        className="fill-brand-pandan-600 stroke-brand-pandan-600"
+      />
     </g>
   ),
   // Umum: a generic folder/box.

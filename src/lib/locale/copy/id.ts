@@ -15,8 +15,9 @@
  *   - `kosong` empty-state titles/descriptions per surface
  *   - `validasi` generic form-validation messages
  *   - `aksi`   common action / button labels
+ *   - `rbac`   visual role-based access (RBAC) strings
  *
- * Requirement: 21.5
+ * Requirement: 21.5, 20.3
  */
 
 export const copy = {
@@ -96,6 +97,12 @@ export const copy = {
     cari: "Cari",
     filter: "Filter",
     lihatDetail: "Lihat detail",
+  },
+
+  /** Visual role-based access (RBAC) strings — Requirement 20.3. */
+  rbac: {
+    /** Tooltip shown on Owner-only actions disabled for other roles. */
+    hanyaUntukPemilik: "Hanya untuk Pemilik",
   },
 } as const;
 

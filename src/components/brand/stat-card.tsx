@@ -87,7 +87,10 @@ export function StatCard({
           <span className="text-sm font-medium text-muted-foreground">{label}</span>
           {Icon ? (
             <Icon
-              className={cn("lucide size-5", accent ? ACCENT_ICON[accent] : "text-muted-foreground")}
+              className={cn(
+                "lucide size-5",
+                accent ? ACCENT_ICON[accent] : "text-muted-foreground",
+              )}
               aria-hidden="true"
             />
           ) : null}

@@ -15,6 +15,7 @@ export {
   KNOWN_PAYMENT_TOKEN,
   PAYMENT_CHANNELS,
   PRIMARY_TENANT_ID,
+  PRIMARY_TENANT_SEED,
   PROPERTY_IDS,
 } from "./fixtures";
 // View-model types and shared aliases.
