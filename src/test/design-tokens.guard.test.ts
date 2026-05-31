@@ -50,9 +50,8 @@ function parseRootTokens(css: string): Map<string, string> {
   }
   const tokens = new Map<string, string>();
   const declRe = /--([\w-]+)\s*:\s*([^;]+);/g;
-  let m: RegExpExecArray | null;
-  while ((m = declRe.exec(rootMatch[1])) !== null) {
-    tokens.set(m[1], m[2].trim());
+  for (const decl of rootMatch[1].matchAll(declRe)) {
+    tokens.set(decl[1], decl[2].trim());
   }
   return tokens;
 }
@@ -117,7 +116,9 @@ describe("design tokens — primary brand color (Req 1.2)", () => {
   it("maps --primary to the pandan token, not a violet/indigo/purple token", () => {
     // Guards identity: the semantic primary must alias the brand pandan token.
     expect(rootTokens.get("primary")).toBe("var(--brand-pandan-600)");
-    expect(globalsCss).not.toMatch(/--primary\s*:\s*var\(--brand-(violet|indigo|purple)/i);
+    expect(globalsCss).not.toMatch(
+      /--primary\s*:\s*var\(--brand-(violet|indigo|purple)/i,
+    );
   });
 
   it("keeps the primary hue OUTSIDE the violet/indigo/purple range", () => {
@@ -161,12 +162,15 @@ describe("design tokens — anti-generic hue property (Req 1.2)", () => {
     // configured primary hue must differ from it AND must itself lie outside the
     // band. This holds across all samples because the pandan hue is 165.
     fc.assert(
-      fc.property(fc.integer({ min: VIOLET_HUE_MIN, max: VIOLET_HUE_MAX }), (forbiddenHue) => {
-        return (
-          primaryHue !== forbiddenHue &&
-          (primaryHue < VIOLET_HUE_MIN || primaryHue > VIOLET_HUE_MAX)
-        );
-      }),
+      fc.property(
+        fc.integer({ min: VIOLET_HUE_MIN, max: VIOLET_HUE_MAX }),
+        (forbiddenHue) => {
+          return (
+            primaryHue !== forbiddenHue &&
+            (primaryHue < VIOLET_HUE_MIN || primaryHue > VIOLET_HUE_MAX)
+          );
+        },
+      ),
       pbtConfig,
     );
   });
