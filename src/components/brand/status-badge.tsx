@@ -34,7 +34,9 @@ export type EntityStatus =
   | "aktif"
   | "ditangguhkan"
   | "berhenti"
-  | "keluar";
+  | "keluar"
+  | "berakhir"
+  | "diputus";
 
 /** The named status color families used by badges, rows, and charts. */
 export type StatusTone = "success" | "warning" | "danger" | "info" | "neutral";
@@ -64,7 +66,8 @@ const TONE_CLASS: Record<StatusTone, string> = {
  *  - danger:  jatuh_tempo, tunggakan, ditangguhkan (overdue / arrears / suspended)
  *  - warning: perbaikan, trial              (needs attention / time-limited)
  *  - info:    tertagih, terisi              (billed / occupied — informational)
- *  - neutral: draft, batal, berhenti        (inactive / cancelled / stopped)
+ *  - neutral: draft, batal, berhenti, keluar, berakhir (inactive / ended)
+ *  - danger also covers `diputus` (contract terminated early).
  */
 const STATUS_MAP: Record<EntityStatus, StatusStyle> = {
   // Billing / invoices.
@@ -85,6 +88,9 @@ const STATUS_MAP: Record<EntityStatus, StatusStyle> = {
   berhenti: { tone: "neutral", label: "Berhenti" },
   // Residents.
   keluar: { tone: "neutral", label: "Keluar" },
+  // Contracts.
+  berakhir: { tone: "neutral", label: "Berakhir" },
+  diputus: { tone: "danger", label: "Diputus" },
 };
 
 export interface StatusBadgeProps {

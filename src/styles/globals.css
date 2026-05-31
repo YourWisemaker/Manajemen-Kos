@@ -228,3 +228,39 @@
     scroll-behavior: auto !important;
   }
 }
+
+/*
+ * Print styles — Task 16.2
+ * ------------------------
+ * The printable contract document (`@/app/(dashboard)/kontrak/printable-contract`)
+ * is hidden on screen and revealed only when printing, while everything marked
+ * `print:hidden` (the app chrome: sidebar, top bar, bottom tab bar, and the
+ * interactive detail card) is removed. The dashboard shell pins `h-dvh` and
+ * `overflow-hidden` on its containers for the on-screen layout, which would
+ * otherwise clip a printed page to one screen — so we release those here and
+ * reset the page to a plain white sheet with black ink.
+ */
+@media print {
+  /* Drop the on-screen viewport height/scroll locks so content can paginate. */
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  /* Release the shell's flex height/overflow clamps so the page expands. */
+  body * {
+    overflow: visible !important;
+  }
+
+  /* Hide any element explicitly marked as screen-only chrome. */
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Avoid awkward page breaks inside the signature/terms blocks. */
+  article[aria-label="Pratinjau cetak kontrak"] {
+    break-inside: avoid;
+  }
+}
