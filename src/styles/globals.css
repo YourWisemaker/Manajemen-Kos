@@ -1,0 +1,230 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * KosKita design tokens — Task 1.2
+ * --------------------------------
+ * "Rumah modern Indonesia": warm, grounded, crafted. Deliberately NOT the
+ * generic shadcn violet/indigo + cold-slate look.
+ *
+ * Color tokens are stored as raw OKLCH channels ("L C H") so Tailwind can wrap
+ * them as `oklch(var(--token) / <alpha-value>)`, preserving opacity modifiers
+ * (e.g. `bg-primary/90`) while still emitting valid OKLCH colors.
+ */
+
+@layer base {
+  :root {
+    /* --- Brand palette (raw OKLCH channels: L C H) --- */
+    --brand-pandan-900: 0.28 0.05 165; /* deep jade — primary text-on-light */
+    --brand-pandan-600: 0.52 0.09 165; /* signature green — primary actions */
+    --brand-pandan-300: 0.86 0.04 165; /* primary tint / hover bg */
+    --brand-kunyit-500: 0.74 0.14 70; /* warm amber/turmeric — accent */
+    --brand-terracotta-500: 0.62 0.13 40; /* clay — secondary accent */
+    --brand-teal-500: 0.62 0.07 195; /* teal end-stop for the one gradient */
+
+    /* --- Warm paper neutrals (never cold slate/zinc) --- */
+    --paper-50: 0.985 0.006 90; /* app background — warm off-white, not #fff */
+    --paper-100: 0.97 0.008 90; /* card surface */
+    --paper-200: 0.95 0.008 88; /* muted surface */
+    --ink-900: 0.25 0.02 80; /* headings — warm near-black */
+    --ink-600: 0.45 0.015 80; /* body text — warm gray */
+    --line: 0.9 0.01 85; /* hairline borders — warm */
+
+    /* --- Named status tokens --- */
+    --success: 0.6 0.12 150; /* lunas / paid */
+    --warning: 0.8 0.13 80; /* jatuh tempo dekat */
+    --danger: 0.58 0.16 30; /* tunggakan — clay-red, not pure red */
+    --info: 0.62 0.07 240; /* informasi — muted */
+    --success-foreground: 0.985 0.01 95;
+    --warning-foreground: 0.28 0.03 80;
+    --danger-foreground: 0.985 0.01 95;
+    --info-foreground: 0.985 0.01 95;
+
+    /* --- shadcn semantic mappings (alias the palette above) --- */
+    --background: var(--paper-50);
+    --foreground: var(--ink-900);
+    --card: var(--paper-100);
+    --card-foreground: var(--ink-900);
+    --popover: var(--paper-100);
+    --popover-foreground: var(--ink-900);
+    --primary: var(--brand-pandan-600);
+    --primary-foreground: 0.985 0.01 95;
+    --secondary: var(--brand-pandan-300);
+    --secondary-foreground: var(--brand-pandan-900);
+    --muted: var(--paper-200);
+    --muted-foreground: var(--ink-600);
+    --accent: var(--brand-kunyit-500);
+    --accent-foreground: 0.28 0.04 70;
+    --destructive: var(--danger);
+    --destructive-foreground: 0.985 0.01 95;
+    --border: var(--line);
+    --input: var(--line);
+    --ring: var(--brand-pandan-600);
+
+    /* --- Radius scale (intentional, not pill-everything) --- */
+    --radius: 0.625rem; /* 10px — base (buttons / inputs) */
+    --radius-card: 0.875rem; /* 14px */
+    --radius-button: 0.625rem; /* 10px */
+    --radius-input: 0.625rem; /* 10px */
+    --radius-badge: 0.5rem; /* 8px */
+
+    /* --- Warm-tinted soft shadows (brownish, never pure black) --- */
+    --shadow-warm-sm: 0 1px 2px 0 rgb(56 40 24 / 0.06);
+    --shadow-warm-md:
+      0 2px 8px -2px rgb(56 40 24 / 0.08), 0 1px 3px -1px rgb(56 40 24 / 0.06);
+    --shadow-warm-lg:
+      0 8px 24px -6px rgb(56 40 24 / 0.12), 0 2px 6px -2px rgb(56 40 24 / 0.08);
+  }
+
+  .dark {
+    /* Warm charcoal — keeps the warm-paper character, NOT cold #0a0a0a */
+    --background: 0.22 0.01 80;
+    --foreground: 0.92 0.01 90;
+    --card: 0.25 0.012 80;
+    --card-foreground: 0.92 0.01 90;
+    --popover: 0.25 0.012 80;
+    --popover-foreground: 0.92 0.01 90;
+    --primary: 0.62 0.1 165; /* brighter pandan for dark surfaces */
+    --primary-foreground: 0.16 0.02 165;
+    --secondary: 0.3 0.03 165;
+    --secondary-foreground: 0.9 0.02 165;
+    --muted: 0.28 0.01 80;
+    --muted-foreground: 0.72 0.015 85;
+    --accent: 0.74 0.14 70;
+    --accent-foreground: 0.2 0.03 70;
+    --destructive: 0.58 0.16 30;
+    --destructive-foreground: 0.985 0.01 95;
+    --border: 0.32 0.012 80;
+    --input: 0.32 0.012 80;
+    --ring: 0.62 0.1 165;
+
+    --line: 0.32 0.012 80;
+
+    --shadow-warm-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+    --shadow-warm-md:
+      0 2px 8px -2px rgb(0 0 0 / 0.45), 0 1px 3px -1px rgb(0 0 0 / 0.4);
+    --shadow-warm-lg:
+      0 8px 24px -6px rgb(0 0 0 / 0.55), 0 2px 6px -2px rgb(0 0 0 / 0.45);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Headings use the display face with tight tracking. */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    color: oklch(var(--foreground));
+  }
+
+  /* Fluid clamp() type scale (mobile-first). */
+  h1 {
+    font-size: clamp(1.5rem, 1.1rem + 2vw, 2rem);
+  }
+
+  h2 {
+    font-size: clamp(1.25rem, 1.05rem + 1vw, 1.5rem);
+  }
+
+  h3 {
+    font-size: clamp(1.125rem, 1rem + 0.6vw, 1.25rem);
+  }
+
+  small {
+    font-size: 0.875rem;
+  }
+
+  /*
+   * Icons: Lucide is the only interface icon set (no emoji-as-icons).
+   * Enforce the 1.5px stroke convention globally; CSS overrides Lucide's
+   * default stroke-width="2" presentation attribute.
+   */
+  svg.lucide {
+    stroke-width: 1.5px;
+  }
+}
+
+@layer utilities {
+  /* Editorial display size, separate from the semantic h1. */
+  .text-display {
+    font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+    font-size: clamp(2rem, 1.2rem + 4vw, 3.5rem);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+  }
+
+  .text-caption {
+    font-size: 0.75rem;
+    line-height: 1.4;
+  }
+
+  /* Tabular mono figures for money / invoice / VA numbers so columns align. */
+  .tabular-figures {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+
+  /*
+   * The SINGLE allowed gradient: low-contrast pandan -> teal.
+   * Use only on the marketing hero and empty-state art.
+   */
+  .bg-gradient-pandan {
+    background-image: linear-gradient(
+      135deg,
+      oklch(var(--brand-pandan-600)),
+      oklch(var(--brand-teal-500))
+    );
+  }
+
+  .text-gradient-pandan {
+    background-image: linear-gradient(
+      135deg,
+      oklch(var(--brand-pandan-600)),
+      oklch(var(--brand-teal-500))
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /*
+   * Anyaman (woven) motif — subtle diagonal-weave SVG tile at low opacity.
+   * Use only on the marketing hero, onboarding sidebar, and empty states.
+   */
+  .bg-anyaman {
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='40'%20height='40'%20viewBox='0%200%2040%2040'%3E%3Cg%20fill='none'%20stroke='%237a6a52'%20stroke-width='1'%20stroke-opacity='0.5'%3E%3Cpath%20d='M0%2020L20%200M20%2040L40%2020'/%3E%3Cpath%20d='M0%2020L20%2040M20%200L40%2020'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 40px 40px;
+    background-repeat: repeat;
+  }
+}
+
+/* Respect the OS reduced-motion preference: disable non-essential motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
