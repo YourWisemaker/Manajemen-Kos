@@ -33,7 +33,8 @@ export type EntityStatus =
   | "trial"
   | "aktif"
   | "ditangguhkan"
-  | "berhenti";
+  | "berhenti"
+  | "keluar";
 
 /** The named status color families used by badges, rows, and charts. */
 export type StatusTone = "success" | "warning" | "danger" | "info" | "neutral";
@@ -82,6 +83,8 @@ const STATUS_MAP: Record<EntityStatus, StatusStyle> = {
   aktif: { tone: "success", label: "Aktif" },
   ditangguhkan: { tone: "danger", label: "Ditangguhkan" },
   berhenti: { tone: "neutral", label: "Berhenti" },
+  // Residents.
+  keluar: { tone: "neutral", label: "Keluar" },
 };
 
 export interface StatusBadgeProps {

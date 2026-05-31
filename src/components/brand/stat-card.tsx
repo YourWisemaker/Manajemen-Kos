@@ -25,8 +25,12 @@ type StatAccent = "pandan" | "kunyit" | "terracotta";
 export interface StatCardProps {
   /** Short metric label, e.g. "Okupansi". */
   label: string;
-  /** Pre-formatted metric value, e.g. "87%" or "Rp 12.500.000". */
-  value: string;
+  /**
+   * The metric value. Usually a pre-formatted string (e.g. "87%"), but may be
+   * a node so money values can render through `RupiahText` (JetBrains Mono
+   * tabular) per the design's money-formatting rule.
+   */
+  value: React.ReactNode;
   /** Optional period-over-period change indicator. */
   delta?: { direction: DeltaDirection; label: string };
   /** Optional Lucide icon shown top-right, tinted by `accent`. */
@@ -35,6 +39,8 @@ export interface StatCardProps {
   accent?: StatAccent;
   /** Optional extra classes merged onto the card. */
   className?: string;
+  /** Optional children rendered below the value (e.g. OccupancyMeter). */
+  children?: React.ReactNode;
 }
 
 // Delta direction -> Lucide icon + tone color (success up, danger down, muted flat).
@@ -70,6 +76,7 @@ export function StatCard({
   icon: Icon,
   accent,
   className,
+  children,
 }: StatCardProps) {
   const DeltaIcon = delta ? DELTA_ICON[delta.direction] : null;
 
@@ -109,6 +116,7 @@ export function StatCard({
             {delta.label}
           </span>
         ) : null}
+        {children}
       </CardContent>
     </Card>
   );

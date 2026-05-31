@@ -30,4 +30,5 @@ export {
   type StatusBadgeProps,
   type StatusTone,
 } from "./status-badge";
+export { TrialBanner, type TrialBannerProps } from "./trial-banner";
 export { WizardStepper, type WizardStepperProps } from "./wizard-stepper";

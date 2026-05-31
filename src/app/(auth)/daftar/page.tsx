@@ -15,8 +15,8 @@ import { emailSchema, nonEmptyTrimmed } from "@/lib/schemas/primitives";
  * -----------------------------
  * Split layout: warm-paper form panel (left) + anyaman reassurance sidebar
  * (right, hidden on mobile). Full name, email, password, confirm password.
- * RHF+Zod validation. On successful mock registration, navigate to
- * /onboarding/paket (the first real onboarding step after registration).
+ * RHF+Zod validation. On successful mock registration, navigate to the
+ * onboarding wizard (which begins at the Daftar step at /onboarding).
  *
  * Requirements: 6.1, 6.2, 6.3, 6.4
  */
@@ -47,8 +47,8 @@ export default function DaftarPage() {
   });
 
   const onSubmit = makeSubmitHandler((_values: RegisterValues) => {
-    // Mock registration: navigate to the first onboarding step
-    router.push("/onboarding/paket");
+    // Mock registration: enter the onboarding wizard at its first step (Daftar).
+    router.push("/onboarding");
   });
 
   return (
