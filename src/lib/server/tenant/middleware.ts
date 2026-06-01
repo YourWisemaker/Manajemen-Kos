@@ -1,0 +1,265 @@
+import { type NextRequest, NextResponse } from "next/server";
+
+import type { TenantStore } from "./context";
+
+// ---------------------------------------------------------------------------
+// Route classification
+// ---------------------------------------------------------------------------
+
+/** Routes that never require tenant resolution (marketing, auth, assets). */
+const PUBLIC_PATH_PREFIXES = [
+  "/_next",
+  "/favicon.ico",
+  "/api/auth",
+  "/masuk",
+  "/daftar",
+  "/onboarding",
+] as const;
+
+/** Static asset extensions that bypass middleware entirely. */
+const STATIC_EXTENSIONS = [
+  ".svg",
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".gif",
+  ".ico",
+  ".css",
+  ".js",
+  ".woff",
+  ".woff2",
+  ".ttf",
+] as const;
+
+function isPublicRoute(pathname: string): boolean {
+  // Root marketing page
+  if (pathname === "/") return true;
+
+  // Static file extensions
+  if (STATIC_EXTENSIONS.some((ext) => pathname.endsWith(ext))) return true;
+
+  // Public path prefixes
+  if (PUBLIC_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return true;
+
+  return false;
+}
+
+// ---------------------------------------------------------------------------
+// Subdomain extraction
+// ---------------------------------------------------------------------------
+
+/** Base domains where subdomains are meaningful. */
+const BASE_DOMAINS = ["koskita.id", "localhost"];
+
+function extractSubdomain(host: string | null): string | null {
+  if (!host) return null;
+
+  // Strip port for localhost
+  const hostname = host.split(":")[0];
+
+  for (const base of BASE_DOMAINS) {
+    if (hostname.endsWith(base) && hostname !== base) {
+      const sub = hostname.slice(0, -(base.length + 1)); // +1 for the dot
+      // Ignore "www" or empty subdomains
+      if (sub && sub !== "www" && sub !== "app") return sub;
+    }
+  }
+
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// Redis cache helpers (lazy import to avoid build-time crashes)
+// ---------------------------------------------------------------------------
+
+let _redis: import("@upstash/redis").Redis | null | undefined;
+
+async function getRedis(): Promise<import("@upstash/redis").Redis | null> {
+  if (_redis === undefined) {
+    const url = process.env.UPSTASH_REDIS_REST_URL;
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+    if (url && token) {
+      const { Redis } = await import("@upstash/redis");
+      _redis = new Redis({ url, token });
+    } else {
+      _redis = null;
+    }
+  }
+  return _redis;
+}
+
+const SUBDOMAIN_CACHE_TTL = 3600; // 1 hour
+
+async function lookupSubdomainTenantId(subdomain: string): Promise<string | null> {
+  const redis = await getRedis();
+  const cacheKey = `tenant:subdomain:${subdomain}`;
+
+  // Try cache first
+  if (redis) {
+    try {
+      const cached = await redis.get<string>(cacheKey);
+      if (cached) return cached;
+    } catch {
+      // Redis unavailable — fall through to DB
+    }
+  }
+
+  // DB lookup (dynamic import to keep middleware lightweight)
+  try {
+    const { eq } = await import("drizzle-orm");
+    const { getDb } = await import("@/lib/server/db");
+    const { tenantSaas } = await import("@/lib/server/db/schema/tenants");
+
+    const db = getDb();
+    const result = await db
+      .select({ id: tenantSaas.id })
+      .from(tenantSaas)
+      .where(eq(tenantSaas.subdomain, subdomain))
+      .limit(1);
+
+    const tenantId = result[0]?.id ?? null;
+
+    // Cache the result
+    if (tenantId && redis) {
+      try {
+        await redis.set(cacheKey, tenantId, { ex: SUBDOMAIN_CACHE_TTL });
+      } catch {
+        // Non-critical — continue without caching
+      }
+    }
+
+    return tenantId;
+  } catch {
+    // DB unavailable during build or test — return null
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Payment token resolution
+// ---------------------------------------------------------------------------
+
+async function lookupPaymentTokenTenantId(token: string): Promise<string | null> {
+  try {
+    const { eq } = await import("drizzle-orm");
+    const { getDb } = await import("@/lib/server/db");
+    const { invoice } = await import("@/lib/server/db/schema/invoices");
+
+    const db = getDb();
+    const result = await db
+      .select({ tenantId: invoice.tenantId })
+      .from(invoice)
+      .where(eq(invoice.paymentLinkToken, token))
+      .limit(1);
+
+    return result[0]?.tenantId ?? null;
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Main tenant resolution logic
+// ---------------------------------------------------------------------------
+
+export interface TenantResolutionResult {
+  resolved: boolean;
+  store: TenantStore | null;
+  response?: NextResponse;
+}
+
+/**
+ * Resolve the tenant for the current request.
+ *
+ * Resolution priority:
+ * 1. Authenticated session (JWT claim / cookie placeholder)
+ * 2. Payment token from /pay/[token] route
+ * 3. Subdomain lookup (cached in Redis)
+ * 4. Super admin X-Tenant-ID header (impersonation)
+ *
+ * TODO: Replace placeholder session extraction with real Better Auth
+ * session reading in Task 4.
+ */
+export async function resolveTenant(
+  request: NextRequest,
+): Promise<TenantResolutionResult> {
+  const { pathname } = request.nextUrl;
+
+  // Skip public routes — no tenant resolution needed
+  if (isPublicRoute(pathname)) {
+    return { resolved: true, store: null };
+  }
+
+  let tenantId: string | null = null;
+  let userId: string | null = null;
+  let role: TenantStore["role"] = null;
+  let isSuperAdmin = false;
+
+  // --- Strategy 1: Session/JWT placeholder ---
+  // TODO: Wire real Better Auth session reading here (Task 4).
+  // For now, read from cookie or header as a placeholder.
+  const sessionTenantId =
+    request.cookies.get("tenant_id")?.value ?? request.headers.get("x-tenant-id");
+  const sessionUserId =
+    request.cookies.get("user_id")?.value ?? request.headers.get("x-user-id");
+  const sessionRole = (request.cookies.get("user_role")?.value ??
+    request.headers.get("x-user-role")) as TenantStore["role"];
+
+  if (sessionTenantId) {
+    tenantId = sessionTenantId;
+    userId = sessionUserId ?? null;
+    role = sessionRole ?? null;
+  }
+
+  // --- Strategy 2: Payment token route ---
+  if (!tenantId) {
+    const payTokenMatch = pathname.match(/^\/pay\/([^/]+)/);
+    if (payTokenMatch) {
+      const token = payTokenMatch[1];
+      tenantId = await lookupPaymentTokenTenantId(token);
+      // Payment pages are public — no userId/role needed
+    }
+  }
+
+  // --- Strategy 3: Subdomain ---
+  if (!tenantId) {
+    const host = request.headers.get("host");
+    const subdomain = extractSubdomain(host);
+    if (subdomain) {
+      tenantId = await lookupSubdomainTenantId(subdomain);
+    }
+  }
+
+  // --- Strategy 4: Super admin impersonation header ---
+  if (!tenantId) {
+    const impersonateHeader = request.headers.get("x-tenant-id");
+    const impersonateRole = request.headers.get("x-user-role");
+    if (impersonateHeader && impersonateRole === "super_admin") {
+      tenantId = impersonateHeader;
+      isSuperAdmin = true;
+      role = "super_admin";
+      // TODO: Log audit entry for impersonation (Task 14)
+    }
+  }
+
+  // --- No tenant resolved on a protected route → 401 ---
+  if (!tenantId) {
+    return {
+      resolved: false,
+      store: null,
+      response: NextResponse.json(
+        { error: "Tenant could not be resolved" },
+        { status: 401 },
+      ),
+    };
+  }
+
+  const store: TenantStore = {
+    tenantId,
+    userId,
+    role,
+    isSuperAdmin,
+  };
+
+  return { resolved: true, store };
+}
