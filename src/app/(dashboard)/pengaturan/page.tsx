@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import copy from "@/lib/locale/copy/id";
 import { dataSource, PRIMARY_TENANT_ID, type TenantSettings } from "@/lib/mock";
+import { subdomainSchema } from "@/lib/schemas";
 import { OwnerAction, useTenant } from "@/lib/tenant";
 
 /**
@@ -101,10 +102,18 @@ function ProfilBisnisTab({
 }) {
   const [brandColor, setBrandColor] = useState(settings.brandColor);
   const [name, setName] = useState(settings.name);
+  const [subdomain, setSubdomain] = useState(settings.subdomain);
+  const [subdomainError, setSubdomainError] = useState<string | null>(null);
 
   function handleColorChange(color: string) {
     setBrandColor(color);
     onSettingsChange({ ...settings, brandColor: color });
+  }
+
+  function handleSubdomainChange(value: string) {
+    setSubdomain(value);
+    const result = subdomainSchema.safeParse(value);
+    setSubdomainError(result.success ? null : (result.error.issues[0]?.message ?? null));
   }
 
   return (
@@ -120,6 +129,25 @@ function ProfilBisnisTab({
               Nama Bisnis
             </label>
             <Input id="bizName" value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="subdomain" className="text-sm font-medium text-foreground">
+              Subdomain
+            </label>
+            <div className="flex items-center gap-2">
+              <Input
+                id="subdomain"
+                value={subdomain}
+                onChange={(e) => handleSubdomainChange(e.target.value)}
+                placeholder="kosbunga"
+                className="w-48"
+              />
+              <span className="text-sm text-muted-foreground">.koskita.id</span>
+            </div>
+            {subdomainError && (
+              <p className="text-xs text-destructive">{subdomainError}</p>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -221,6 +249,7 @@ function PembayaranTab() {
     va: true,
     ewallet: true,
     retail: false,
+    manual: false,
   });
   const [feeBearer, setFeeBearer] = useState<"pemilik" | "penghuni" | "split">("pemilik");
 
@@ -256,6 +285,12 @@ function PembayaranTab() {
             description="Bayar di gerai retail"
             checked={channels.retail}
             onChange={(v) => setChannels((c) => ({ ...c, retail: v }))}
+          />
+          <ChannelToggle
+            label="Transfer Manual"
+            description="Upload bukti transfer bank"
+            checked={channels.manual}
+            onChange={(v) => setChannels((c) => ({ ...c, manual: v }))}
           />
         </div>
 
@@ -439,7 +474,7 @@ function TimTab() {
       <CardHeader className="flex flex-row items-center justify-between">
         <h2 className="text-sm font-semibold text-foreground">Anggota Tim</h2>
         <Button variant="outline-ink" size="sm" iconLeft={UserPlus}>
-          Undang
+          Undang Anggota
         </Button>
       </CardHeader>
       <CardContent>
