@@ -32,6 +32,64 @@ export type Permission =
   | "admin:suspend";
 
 // ---------------------------------------------------------------------------
+// Errors — carry HTTP status codes so callers can return 401 / 403
+// (Requirements 4.2, 4.3)
+// ---------------------------------------------------------------------------
+
+/** Base authorization error carrying an HTTP status code. */
+export class AuthError extends Error {
+  readonly statusCode: number;
+
+  constructor(message: string, statusCode: number) {
+    super(message);
+    this.name = "AuthError";
+    this.statusCode = statusCode;
+  }
+}
+
+/** 401 — the request is not authenticated (Requirement 4.2). */
+export class UnauthorizedError extends AuthError {
+  constructor(message = "Unauthorized: authentication required") {
+    super(message, 401);
+    this.name = "UnauthorizedError";
+  }
+}
+
+/** 403 — authenticated but lacking the required permission (Requirement 4.3). */
+export class ForbiddenError extends AuthError {
+  constructor(message = "Forbidden: insufficient permissions") {
+    super(message, 403);
+    this.name = "ForbiddenError";
+  }
+}
+
+/**
+ * Map an unknown error to a JSON `Response` with the appropriate status code.
+ * Use in API Route handlers to turn a thrown `AuthError` into a 401 / 403
+ * response (anything else becomes a 500).
+ *
+ * @example
+ * ```ts
+ * export async function POST(request: Request) {
+ *   try {
+ *     await requirePermission("invoice:write");
+ *   } catch (err) {
+ *     return toAuthErrorResponse(err);
+ *   }
+ *   // ... handler logic
+ * }
+ * ```
+ */
+export function toAuthErrorResponse(error: unknown): Response {
+  const status = error instanceof AuthError ? error.statusCode : 500;
+  const message = error instanceof Error ? error.message : "Internal Server Error";
+  return new Response(JSON.stringify({ error: message }), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Role → Permissions mapping
 // ---------------------------------------------------------------------------
 
@@ -102,6 +160,57 @@ export function meetsRoleRequirement(userRole: Role, requiredRole: Role): boolea
 }
 
 // ---------------------------------------------------------------------------
+// Audit logging for failed permission checks — Requirement 4.6
+// ---------------------------------------------------------------------------
+
+interface AuthFailureContext {
+  /** What was denied — the permission or role requirement. */
+  required: string;
+  /** Resolved actor id, if the request was authenticated. */
+  actorId?: string | null;
+  /** Resolved tenant id, if known. */
+  tenantId?: string | null;
+  /** The actor's role, if authenticated. */
+  role?: Role | null;
+  /** "401" (unauthenticated) or "403" (unauthorized). */
+  reason: "unauthenticated" | "unauthorized";
+}
+
+/**
+ * Record a failed permission check to the audit log — Requirement 4.6.
+ *
+ * Captures the actor, the attempted action, and a timestamp (set by the
+ * audit service via `created_at`). Non-blocking and never throws: a failure
+ * to log must not change the auth decision or surface to the caller.
+ */
+function logAuthFailure(ctx: AuthFailureContext): void {
+  // Lazy import to avoid pulling the DB layer into modules that only need
+  // the pure permission helpers, and to keep this fire-and-forget.
+  void (async () => {
+    try {
+      const { auditService } = await import("@/lib/server/audit/service");
+      await auditService.log({
+        actorId: ctx.actorId ?? "anonymous",
+        action: "auth.permission_denied",
+        entityType: "auth",
+        entityId: ctx.required,
+        metadata: {
+          reason: ctx.reason,
+          required: ctx.required,
+          role: ctx.role ?? null,
+          // Pass tenantId so the audit service can attribute the entry even
+          // when no AsyncLocalStorage context has been established yet.
+          ...(ctx.tenantId ? { tenantId: ctx.tenantId } : {}),
+          timestamp: new Date().toISOString(),
+        },
+      });
+    } catch {
+      // Never let audit logging interfere with the auth flow.
+    }
+  })();
+}
+
+// ---------------------------------------------------------------------------
 // withAuth — Higher-order function for Server Actions
 // ---------------------------------------------------------------------------
 
@@ -161,7 +270,14 @@ export function withAuth<T extends (...args: never[]) => unknown>(
     const session = await getSession();
 
     if (!session?.user && !options.allowPublic) {
-      throw new Error("Unauthorized: authentication required");
+      logAuthFailure({
+        required: options.requiredPermission ?? options.requiredRole ?? "authenticated",
+        actorId: userId,
+        tenantId,
+        role: userRole,
+        reason: "unauthenticated",
+      });
+      throw new UnauthorizedError();
     }
 
     // Resolve effective tenant/role from session or headers
@@ -179,20 +295,43 @@ export function withAuth<T extends (...args: never[]) => unknown>(
       null;
 
     if (!effectiveTenantId && !options.allowPublic) {
-      throw new Error("Unauthorized: no tenant context");
+      logAuthFailure({
+        required: options.requiredPermission ?? options.requiredRole ?? "tenant",
+        actorId: effectiveUserId,
+        tenantId: null,
+        role: effectiveRole,
+        reason: "unauthenticated",
+      });
+      throw new UnauthorizedError("Unauthorized: no tenant context");
     }
 
     // --- Role check ---
     if (options.requiredRole && effectiveRole) {
       if (!meetsRoleRequirement(effectiveRole, options.requiredRole)) {
-        throw new Error(`Forbidden: requires role '${options.requiredRole}'`);
+        logAuthFailure({
+          required: options.requiredRole,
+          actorId: effectiveUserId,
+          tenantId: effectiveTenantId,
+          role: effectiveRole,
+          reason: "unauthorized",
+        });
+        throw new ForbiddenError(`Forbidden: requires role '${options.requiredRole}'`);
       }
     }
 
     // --- Permission check ---
     if (options.requiredPermission && effectiveRole) {
       if (!hasPermission(effectiveRole, options.requiredPermission)) {
-        throw new Error(`Forbidden: requires permission '${options.requiredPermission}'`);
+        logAuthFailure({
+          required: options.requiredPermission,
+          actorId: effectiveUserId,
+          tenantId: effectiveTenantId,
+          role: effectiveRole,
+          reason: "unauthorized",
+        });
+        throw new ForbiddenError(
+          `Forbidden: requires permission '${options.requiredPermission}'`,
+        );
       }
     }
 
@@ -231,12 +370,28 @@ export function withAuth<T extends (...args: never[]) => unknown>(
 export async function requirePermission(permission: Permission): Promise<void> {
   const headerStore = await headers();
   const role = headerStore.get("x-user-role") as Role | null;
+  const actorId = headerStore.get("x-user-id");
+  const tenantId = headerStore.get("x-tenant-id");
 
   if (!role) {
-    throw new Error("Unauthorized: authentication required");
+    logAuthFailure({
+      required: permission,
+      actorId,
+      tenantId,
+      role: null,
+      reason: "unauthenticated",
+    });
+    throw new UnauthorizedError();
   }
 
   if (!hasPermission(role, permission)) {
-    throw new Error(`Forbidden: requires permission '${permission}'`);
+    logAuthFailure({
+      required: permission,
+      actorId,
+      tenantId,
+      role,
+      reason: "unauthorized",
+    });
+    throw new ForbiddenError(`Forbidden: requires permission '${permission}'`);
   }
 }

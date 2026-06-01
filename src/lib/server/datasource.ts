@@ -119,7 +119,7 @@ export class RealDataSource implements DataSource {
         .innerJoin(invoice, eq(payment.invoiceId, invoice.id))
         .innerJoin(contract, eq(invoice.contractId, contract.id))
         .innerJoin(kosTenant, eq(contract.kosTenantId, kosTenant.id))
-        .where(and(eq(payment.tenantId, tenantId), eq(payment.status, "settled")))
+        .where(and(eq(payment.tenantId, tenantId), eq(payment.status, "success")))
         .orderBy(sql`${payment.paidAt} DESC`)
         .limit(10);
 
@@ -542,7 +542,7 @@ export class RealDataSource implements DataSource {
           amount: sum(payment.amountPaid),
         })
         .from(payment)
-        .where(and(eq(payment.tenantId, tenantId), eq(payment.status, "settled")))
+        .where(and(eq(payment.tenantId, tenantId), eq(payment.status, "success")))
         .groupBy(payment.channelCode);
 
       const channelBreakdown = channelRows.map((r) => ({

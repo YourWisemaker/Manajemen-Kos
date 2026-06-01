@@ -95,36 +95,32 @@ describe("tenant context isolation (Property 1 — Req 1.7, 1.8, 1.9)", () => {
   it("nested contexts restore the outer tenant once the inner scope exits", async () => {
     // **Validates: Requirements 1.7, 1.8, 1.9**
     await fc.assert(
-      fc.asyncProperty(
-        fc.uuid(),
-        fc.uuid(),
-        async (outerId, innerId) => {
-          fc.pre(outerId !== innerId);
-          const outer: TenantStore = {
-            tenantId: outerId,
-            userId: null,
-            role: "owner",
-            isSuperAdmin: false,
-          };
-          const inner: TenantStore = {
-            tenantId: innerId,
-            userId: null,
-            role: "admin",
-            isSuperAdmin: false,
-          };
+      fc.asyncProperty(fc.uuid(), fc.uuid(), async (outerId, innerId) => {
+        fc.pre(outerId !== innerId);
+        const outer: TenantStore = {
+          tenantId: outerId,
+          userId: null,
+          role: "owner",
+          isSuperAdmin: false,
+        };
+        const inner: TenantStore = {
+          tenantId: innerId,
+          userId: null,
+          role: "admin",
+          isSuperAdmin: false,
+        };
 
-          await withTenantContext(outer, async () => {
-            expect(requireTenantId()).toBe(outerId);
-            await withTenantContext(inner, async () => {
-              await interleave();
-              expect(requireTenantId()).toBe(innerId);
-            });
-            // Inner scope must not clobber the outer context.
+        await withTenantContext(outer, async () => {
+          expect(requireTenantId()).toBe(outerId);
+          await withTenantContext(inner, async () => {
             await interleave();
-            expect(requireTenantId()).toBe(outerId);
+            expect(requireTenantId()).toBe(innerId);
           });
-        },
-      ),
+          // Inner scope must not clobber the outer context.
+          await interleave();
+          expect(requireTenantId()).toBe(outerId);
+        });
+      }),
       pbtConfig,
     );
   });

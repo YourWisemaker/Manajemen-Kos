@@ -20,9 +20,7 @@ export const maintenanceRequest = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
-  (table) => [
-    index("idx_maintenance_tenant_status").on(table.tenantId, table.status),
-  ],
+  (table) => [index("idx_maintenance_tenant_status").on(table.tenantId, table.status)],
 );
 
 export const maintenanceRequestRelations = relations(maintenanceRequest, ({ one }) => ({

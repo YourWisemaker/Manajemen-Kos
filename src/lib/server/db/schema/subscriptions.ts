@@ -29,9 +29,7 @@ export const subscription = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
-  (table) => [
-    index("idx_subscription_tenant_status").on(table.tenantId, table.status),
-  ],
+  (table) => [index("idx_subscription_tenant_status").on(table.tenantId, table.status)],
 );
 
 export const subscriptionRelations = relations(subscription, ({ one }) => ({

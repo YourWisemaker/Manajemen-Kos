@@ -5,9 +5,17 @@ import { magicLink } from "better-auth/plugins/magic-link";
 /**
  * Better Auth configuration — Task 4.1
  *
- * Providers: email/password (Argon2id default), Google OAuth, magic link.
- * Optional TOTP 2FA. JWT sessions with custom tenant claims.
- * Hooks: afterSignUp creates tenant workspace, afterSignIn updates last_login.
+ * Providers: email/password (Argon2id via @node-rs/argon2), Google OAuth,
+ * magic link. JWT sessions with custom tenant claims (tenantId, role,
+ * fullName) on top of the built-in `userId`. HTTP-only / Secure / SameSite=Lax
+ * cookies. Hooks: afterSignUp creates the tenant workspace + trial
+ * subscription, afterSignIn updates last_login.
+ *
+ * Known limitation: TOTP 2FA (Requirement 3.4, optional) is intentionally not
+ * enabled on better-auth@1.2.8 — the bundled two-factor plugin issues a GET
+ * request with a body for OTP verification, which throws at runtime under the
+ * Next.js fetch runtime. Re-enable via `twoFactor({ issuer: "KosKita" })` once
+ * better-auth is upgraded past that bug.
  */
 export const auth = betterAuth({
   appName: "KosKita",
@@ -40,9 +48,31 @@ export const auth = betterAuth({
     enabled: true,
     minPasswordLength: 8,
     maxPasswordLength: 128,
-    // Better Auth uses Scrypt by default; we override with Argon2id.
-    // NOTE: argon2 is a peer dep — if not installed, falls back to scrypt.
-    // For now we rely on the default strong hashing.
+    // Better Auth uses Scrypt by default; we override with Argon2id
+    // (OWASP-recommended) via @node-rs/argon2 prebuilt bindings.
+    // Lazy require keeps the native module out of the import graph until
+    // it is actually needed (build-safe, mirrors the db pool pattern).
+    password: {
+      hash: async (password: string): Promise<string> => {
+        const { hash } = require("@node-rs/argon2") as typeof import("@node-rs/argon2");
+        // @node-rs/argon2 defaults to the Argon2id variant.
+        return hash(password, {
+          memoryCost: 19456, // 19 MiB — OWASP minimum
+          timeCost: 2,
+          parallelism: 1,
+        });
+      },
+      verify: async ({
+        hash: storedHash,
+        password,
+      }: {
+        hash: string;
+        password: string;
+      }): Promise<boolean> => {
+        const { verify } = require("@node-rs/argon2") as typeof import("@node-rs/argon2");
+        return verify(storedHash, password);
+      },
+    },
   },
 
   // ---------------------------------------------------------------------------
