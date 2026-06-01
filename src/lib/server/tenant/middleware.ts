@@ -11,6 +11,13 @@ const PUBLIC_PATH_PREFIXES = [
   "/_next",
   "/favicon.ico",
   "/api/auth",
+  // Webhooks self-authenticate via the gateway callback token and resolve their
+  // own tenant from gateway_config — they must bypass session/subdomain
+  // resolution or they would be 401'd before reaching the handler. (Req 7.1)
+  "/api/webhooks",
+  // Cron endpoints self-authenticate via CRON_SECRET and operate across all
+  // tenants, so they have no single tenant context to resolve. (Req 8.1, 10.2)
+  "/api/cron",
   "/masuk",
   "/daftar",
   "/onboarding",
@@ -42,6 +49,15 @@ function isPublicRoute(pathname: string): boolean {
   if (PUBLIC_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return true;
 
   return false;
+}
+
+/**
+ * Public payment pages (`/pay/[token]`). Tenant resolution is *attempted* from
+ * the token so RLS/branding work for valid tokens, but an unresolved token must
+ * NOT 401 — the page renders a branded "Tidak ditemukan" state instead. (Req 1.4)
+ */
+function isPaymentRoute(pathname: string): boolean {
+  return pathname === "/pay" || pathname.startsWith("/pay/");
 }
 
 // ---------------------------------------------------------------------------
@@ -193,7 +209,6 @@ export async function resolveTenant(
   let tenantId: string | null = null;
   let userId: string | null = null;
   let role: TenantStore["role"] = null;
-  let isSuperAdmin = false;
 
   // --- Strategy 1: Session/JWT placeholder ---
   // TODO: Wire real Better Auth session reading here (Task 4).
@@ -236,14 +251,20 @@ export async function resolveTenant(
     const impersonateRole = request.headers.get("x-user-role");
     if (impersonateHeader && impersonateRole === "super_admin") {
       tenantId = impersonateHeader;
-      isSuperAdmin = true;
       role = "super_admin";
       // TODO: Log audit entry for impersonation (Task 14)
     }
   }
 
-  // --- No tenant resolved on a protected route → 401 ---
+  // --- No tenant resolved ---
   if (!tenantId) {
+    // Payment pages are public: an unknown token must reach the page so it can
+    // render its branded "Tidak ditemukan" state rather than a hard 401. (Req 1.4)
+    if (isPaymentRoute(pathname)) {
+      return { resolved: true, store: null };
+    }
+
+    // Any other protected route with no resolvable tenant → 401. (Req 1.5)
     return {
       resolved: false,
       store: null,
@@ -258,7 +279,10 @@ export async function resolveTenant(
     tenantId,
     userId,
     role,
-    isSuperAdmin,
+    // Derive the flag from the resolved role so it stays consistent regardless
+    // of which strategy resolved the tenant (e.g. when the super_admin role
+    // arrives via the session/header in Strategy 1 rather than Strategy 4).
+    isSuperAdmin: role === "super_admin",
   };
 
   return { resolved: true, store };

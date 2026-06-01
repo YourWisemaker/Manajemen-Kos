@@ -1,0 +1,2 @@
+CREATE INDEX "idx_maintenance_tenant_status" ON "maintenance_request" USING btree ("tenant_id","status");--> statement-breakpoint
+CREATE INDEX "idx_subscription_tenant_status" ON "subscription" USING btree ("tenant_id","status");

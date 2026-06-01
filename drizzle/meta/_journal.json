@@ -15,6 +15,13 @@
       "when": 1780286168204,
       "tag": "0001_rls_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780310026115,
+      "tag": "0002_add_subscription_maintenance_indexes",
+      "breakpoints": true
     }
   ]
 }

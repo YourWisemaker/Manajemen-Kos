@@ -61,6 +61,11 @@ async function getLimiters(): Promise<Map<EndpointCategory, RatelimitInstance> |
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
 
   if (!url || !token) {
+    // Fail open: Redis is not configured. Log a warning once (not per-request)
+    // so the operator knows rate limiting is disabled. (Req 14.5)
+    console.warn(
+      "[ratelimit] UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN not set — rate limiting disabled (failing open).",
+    );
     _initFailed = true;
     return null;
   }

@@ -38,24 +38,34 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  // --- Step 3: Propagate tenant context via headers ---
-  // Next.js Edge middleware cannot use AsyncLocalStorage directly.
-  // We pass the resolved tenant info via request headers so that
-  // Server Components / Server Actions can pick it up and call
-  // tenantStorage.run() in the Node.js runtime.
+  // --- Step 3: Propagate tenant context via REQUEST headers ---
+  // Next.js Edge middleware cannot use AsyncLocalStorage directly. We forward
+  // the resolved tenant info on the *request* headers so Server Components /
+  // Server Actions (running in the Node.js runtime) can read them via
+  // `headers()` and call `tenantStorage.run()`. (Req 1.6)
+  //
+  // We start from the incoming headers but strip any client-supplied internal
+  // headers first, then set the values the resolver actually derived — this
+  // prevents a client from spoofing tenant context that downstream code trusts.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.delete("x-tenant-id");
+  requestHeaders.delete("x-user-id");
+  requestHeaders.delete("x-user-role");
+  requestHeaders.delete("x-is-super-admin");
+
+  requestHeaders.set("x-tenant-id", store.tenantId);
+  if (store.userId) requestHeaders.set("x-user-id", store.userId);
+  if (store.role) requestHeaders.set("x-user-role", store.role);
+  if (store.isSuperAdmin) requestHeaders.set("x-is-super-admin", "true");
+
   const response = NextResponse.next({
     request: {
-      headers: new Headers(request.headers),
+      headers: requestHeaders,
     },
   });
 
-  // Set internal headers for downstream consumption
-  response.headers.set("x-tenant-id", store.tenantId);
-  if (store.userId) response.headers.set("x-user-id", store.userId);
-  if (store.role) response.headers.set("x-user-role", store.role);
-  if (store.isSuperAdmin) response.headers.set("x-is-super-admin", "true");
-
-  // Also set rate limit info headers for observability
+  // Expose only rate limit info on the response for observability. Internal
+  // tenant context is intentionally NOT set on the response (no client leak).
   response.headers.set("X-RateLimit-Limit", String(rateLimitResult.limit));
   response.headers.set("X-RateLimit-Remaining", String(rateLimitResult.remaining));
 
