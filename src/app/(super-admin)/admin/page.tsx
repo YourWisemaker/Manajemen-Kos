@@ -44,9 +44,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { chartTheme, chartTooltipStyle } from "@/lib/charts/theme";
+import type { PlatformMetrics, TenantSaasSummary } from "@/lib/data";
 import { formatTanggal } from "@/lib/locale/datetime";
 import { formatRupiah } from "@/lib/locale/rupiah";
-import { type PlatformMetrics, type TenantSaasSummary } from "@/lib/data";
 import { getPlatformMetrics, listTenants } from "./actions";
 
 /**
@@ -126,7 +126,8 @@ export default function AdminPage() {
 
   useEffect(() => {
     let active = true;
-    Promise.all([getPlatformMetrics(), listTenants()]).then(([metricsData, tenantData]) => {
+    Promise.all([getPlatformMetrics(), listTenants()]).then(
+      ([metricsData, tenantData]) => {
         if (!active) return;
         setMetrics(metricsData);
         setTenants(tenantData.tenants);

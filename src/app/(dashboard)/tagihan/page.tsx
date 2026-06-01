@@ -26,9 +26,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { type Invoice, type Property } from "@/lib/data";
+import type { Invoice, Property } from "@/lib/data";
 import copy from "@/lib/locale/copy/id";
 import { formatTanggal, relativeJatuhTempo } from "@/lib/locale/datetime";
+import { listProperties } from "../properti/actions";
+import { listInvoices } from "./actions";
 import {
   ALL_FILTER,
   buildInvoiceFilter,
@@ -39,8 +41,6 @@ import {
   simulateBulkInvoiceCount,
   TIMELINE_STEPS,
 } from "./billing-helpers";
-import { listInvoices } from "./actions";
-import { listProperties } from "../properti/actions";
 
 /**
  * Billing / Invoices Page — Task 17

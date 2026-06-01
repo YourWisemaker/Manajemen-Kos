@@ -9,13 +9,13 @@
  * Requirements: 13.6
  */
 
+import type { PlatformMetrics, TenantSaasSummary } from "@/lib/data";
 import {
   type BroadcastMessage,
   type ListTenantsFilters,
   superAdminService,
 } from "@/lib/server/admin/service";
 import { withAuth } from "@/lib/server/auth/rbac";
-import type { PlatformMetrics, TenantSaasSummary } from "@/lib/data";
 
 function buildMrrTrend(mrr: number): PlatformMetrics["mrrTrend"] {
   const now = new Date();

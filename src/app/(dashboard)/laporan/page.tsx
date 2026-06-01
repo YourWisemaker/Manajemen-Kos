@@ -28,7 +28,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { chartSeries, chartTheme, chartTooltipStyle } from "@/lib/charts/theme";
-import { type ReportBundle } from "@/lib/data";
+import type { ReportBundle } from "@/lib/data";
 import copy from "@/lib/locale/copy/id";
 import { formatRupiah } from "@/lib/locale/rupiah";
 import { getReports } from "./actions";

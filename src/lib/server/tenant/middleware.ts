@@ -104,8 +104,6 @@ async function getRedis(): Promise<import("@upstash/redis").Redis | null> {
   return _redis;
 }
 
-const SUBDOMAIN_CACHE_TTL = 3600; // 1 hour
-
 async function lookupSubdomainTenantId(subdomain: string): Promise<string | null> {
   const redis = await getRedis();
   const cacheKey = `tenant:subdomain:${subdomain}`;

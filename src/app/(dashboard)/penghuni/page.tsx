@@ -26,7 +26,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { type Resident } from "@/lib/data";
+import type { Resident } from "@/lib/data";
 import copy from "@/lib/locale/copy/id";
 import { residentSchema, submitHandler, useZodForm } from "@/lib/schemas";
 import { listResidents } from "./actions";

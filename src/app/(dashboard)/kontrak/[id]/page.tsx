@@ -9,11 +9,11 @@ import { RupiahText, StatusBadge } from "@/components/brand";
 import { CardSkeleton, FadeIn, NotFound } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { type Contract } from "@/lib/data";
+import type { Contract } from "@/lib/data";
 import { formatTanggal } from "@/lib/locale/datetime";
 import { useTenant } from "@/lib/tenant";
-import { PrintableContract } from "../printable-contract";
 import { listContracts } from "../actions";
+import { PrintableContract } from "../printable-contract";
 
 /**
  * Contract detail — Task 16.1 / 16.2

@@ -10,9 +10,10 @@ import { Skeleton } from "@/components/shared/skeleton";
 import { PayShell } from "@/components/shells/pay-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { type PaymentChannelView, type PublicInvoiceView } from "@/lib/data";
+import type { PaymentChannelView, PublicInvoiceView } from "@/lib/data";
 import { formatTanggal, relativeJatuhTempo } from "@/lib/locale/datetime";
 import { cn } from "@/lib/utils";
+import { getPublicInvoice } from "./actions";
 import {
   type ChannelGroup,
   dummyBankAccount,
@@ -21,7 +22,6 @@ import {
   groupChannels,
   qrPlaceholderMatrix,
 } from "./payment-helpers";
-import { getPublicInvoice } from "./actions";
 
 /**
  * Public payment page (`/pay/[token]`) — Task 18

@@ -17,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { type Contract } from "@/lib/data";
+import type { Contract } from "@/lib/data";
 import { formatTanggal } from "@/lib/locale/datetime";
 import { listContracts } from "./actions";
 

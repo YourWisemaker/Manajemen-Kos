@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { EmptyState, OccupancyMeter } from "@/components/brand";
 import { CardSkeleton, FadeIn } from "@/components/shared";
 import { Card, CardContent } from "@/components/ui/card";
-import { type Property } from "@/lib/data";
+import type { Property } from "@/lib/data";
 import copy from "@/lib/locale/copy/id";
 import { listProperties } from "./actions";
 
