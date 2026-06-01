@@ -1,11 +1,9 @@
+export { EmailProvider } from "./email";
 export {
-  NotificationService,
-  notificationService,
   type NotificationPayload,
+  NotificationService,
   type NotificationType,
+  notificationService,
   type SendBatchResult,
 } from "./service";
-
-export { WhatsAppProvider, type WaButton } from "./whatsapp";
-
-export { EmailProvider } from "./email";
+export { type WaButton, WhatsAppProvider } from "./whatsapp";

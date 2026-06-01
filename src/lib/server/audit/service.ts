@@ -7,7 +7,7 @@
  * Requirements: 12.1, 12.2, 12.3, 12.4, 12.5, 12.6
  */
 
-import { and, count, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, lte } from "drizzle-orm";
 
 import { getDb } from "@/lib/server/db";
 import { auditLog } from "@/lib/server/db/schema";
@@ -53,9 +53,7 @@ export class AuditService {
    * Automatically resolves tenantId and actorId from the current context.
    * Tags super admin impersonation entries — Req 12.5.
    */
-  async log(
-    entry: Omit<AuditEntry, "tenantId">,
-  ): Promise<void> {
+  async log(entry: Omit<AuditEntry, "tenantId">): Promise<void> {
     // Fire-and-forget: schedule the write but don't await it in the caller
     void this.writeEntry(entry).catch((err) => {
       console.error(
@@ -131,9 +129,7 @@ export class AuditService {
   // -------------------------------------------------------------------------
 
   /** Internal write — performs the actual DB insert. */
-  private async writeEntry(
-    entry: Omit<AuditEntry, "tenantId">,
-  ): Promise<void> {
+  private async writeEntry(entry: Omit<AuditEntry, "tenantId">): Promise<void> {
     const db = getDb();
 
     // Resolve tenant context (may not be available in all scenarios)

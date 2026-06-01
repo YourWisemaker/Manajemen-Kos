@@ -8,12 +8,11 @@
  * Requirements: 13.1, 13.2, 13.3, 13.4, 13.5, 13.6
  */
 
-import { and, count, eq, ilike, or, sql } from "drizzle-orm";
 import crypto from "node:crypto";
-
-import { getDb } from "@/lib/server/db";
-import { auditLog, payment, subscription, tenantSaas } from "@/lib/server/db/schema";
+import { and, count, eq, ilike, or, sql } from "drizzle-orm";
 import { auditService } from "@/lib/server/audit/service";
+import { getDb } from "@/lib/server/db";
+import { payment, subscription, tenantSaas } from "@/lib/server/db/schema";
 import { notificationService } from "@/lib/server/notifications";
 
 // ---------------------------------------------------------------------------
@@ -110,7 +109,8 @@ export class SuperAdminService {
 
     const cancelled = cancelledResult?.total ?? 0;
     const totalForChurn = activeTenants + cancelled;
-    const churnPct = totalForChurn > 0 ? Math.round((cancelled / totalForChurn) * 100) : 0;
+    const churnPct =
+      totalForChurn > 0 ? Math.round((cancelled / totalForChurn) * 100) : 0;
 
     // Failed webhooks (payments with status 'failed' in last 7 days)
     const sevenDaysAgo = new Date();
@@ -120,10 +120,7 @@ export class SuperAdminService {
       .select({ total: count() })
       .from(payment)
       .where(
-        and(
-          eq(payment.status, "failed"),
-          sql`${payment.createdAt} >= ${sevenDaysAgo}`,
-        ),
+        and(eq(payment.status, "failed"), sql`${payment.createdAt} >= ${sevenDaysAgo}`),
       );
 
     const failedWebhooks = failedResult?.total ?? 0;

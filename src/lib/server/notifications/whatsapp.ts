@@ -44,11 +44,7 @@ export class WhatsAppProvider {
    * @param body - Message text content
    * @param buttons - Optional interactive buttons with URL links
    */
-  async sendMessage(
-    phone: string,
-    body: string,
-    buttons?: WaButton[],
-  ): Promise<void> {
+  async sendMessage(phone: string, body: string, buttons?: WaButton[]): Promise<void> {
     const token = process.env.FONNTE_TOKEN;
     if (!token) {
       console.warn(
@@ -78,9 +74,7 @@ export class WhatsAppProvider {
 
       // Also append the URL to the message body as fallback
       // (some WA clients don't render buttons)
-      const linkText = buttons
-        .map((btn) => `\n${btn.text}: ${btn.url}`)
-        .join("");
+      const linkText = buttons.map((btn) => `\n${btn.text}: ${btn.url}`).join("");
       requestBody.message = `${body}${linkText}`;
     }
 
@@ -103,9 +97,7 @@ export class WhatsAppProvider {
     const result = (await response.json()) as FonnteResponse;
 
     if (!result.status) {
-      throw new Error(
-        `Fonnte delivery failed: ${result.detail ?? "Unknown reason"}`,
-      );
+      throw new Error(`Fonnte delivery failed: ${result.detail ?? "Unknown reason"}`);
     }
   }
 }

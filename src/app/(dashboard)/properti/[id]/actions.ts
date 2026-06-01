@@ -94,9 +94,7 @@ export const listMeterReadings = withAuth(
         createdAt: meterReading.createdAt,
       })
       .from(meterReading)
-      .where(
-        and(eq(meterReading.roomId, roomId), eq(meterReading.tenantId, tenantId)),
-      )
+      .where(and(eq(meterReading.roomId, roomId), eq(meterReading.tenantId, tenantId)))
       .orderBy(desc(meterReading.readingDate));
 
     return rows;

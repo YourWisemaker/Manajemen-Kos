@@ -161,16 +161,11 @@ export class NotificationService {
       // Send WhatsApp if phone provided — Req 9.3
       if (payload.recipientPhone) {
         try {
-          const buttons =
-            payload.variables.link
-              ? [{ text: "Bayar Sekarang", url: payload.variables.link }]
-              : undefined;
+          const buttons = payload.variables.link
+            ? [{ text: "Bayar Sekarang", url: payload.variables.link }]
+            : undefined;
 
-          await this.whatsapp.sendMessage(
-            payload.recipientPhone,
-            rendered.body,
-            buttons,
-          );
+          await this.whatsapp.sendMessage(payload.recipientPhone, rendered.body, buttons);
         } catch (err) {
           // Fire-and-forget — Req 9.6
           console.error(
@@ -183,7 +178,11 @@ export class NotificationService {
       // Send email if email provided — Req 9.4
       if (payload.recipientEmail && rendered.subject) {
         try {
-          const html = this.email.buildHtml(payload.type, payload.variables, rendered.body);
+          const html = this.email.buildHtml(
+            payload.type,
+            payload.variables,
+            rendered.body,
+          );
           await this.email.sendTransactional(
             payload.recipientEmail,
             rendered.subject,

@@ -28,8 +28,7 @@ export class EmailProvider {
   private readonly fromAddress: string;
 
   constructor() {
-    this.fromAddress =
-      process.env.EMAIL_FROM ?? "KosKita <noreply@koskita.id>";
+    this.fromAddress = process.env.EMAIL_FROM ?? "KosKita <noreply@koskita.id>";
   }
 
   /**
@@ -42,9 +41,7 @@ export class EmailProvider {
   async sendTransactional(to: string, subject: string, html: string): Promise<void> {
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
-      console.warn(
-        "[email] RESEND_API_KEY not set. Skipping email delivery.",
-      );
+      console.warn("[email] RESEND_API_KEY not set. Skipping email delivery.");
       return;
     }
 
@@ -61,9 +58,7 @@ export class EmailProvider {
     const { error } = await resend.emails.send(options);
 
     if (error) {
-      throw new Error(
-        `Resend delivery failed: ${error.message ?? "Unknown error"}`,
-      );
+      throw new Error(`Resend delivery failed: ${error.message ?? "Unknown error"}`);
     }
   }
 
@@ -208,10 +203,7 @@ function buildPaymentSuccessHtml(
 }
 
 /** Payment reminder email template */
-function buildReminderHtml(
-  variables: Record<string, string>,
-  bodyText: string,
-): string {
+function buildReminderHtml(variables: Record<string, string>, bodyText: string): string {
   const nama = escapeHtml(variables.nama ?? "Penghuni");
   const jumlah = escapeHtml(variables.jumlah ?? "-");
   const jatuhTempo = escapeHtml(variables.jatuh_tempo ?? "-");
@@ -248,10 +240,7 @@ function buildReminderHtml(
 }
 
 /** Generic email template for other notification types */
-function buildGenericHtml(
-  variables: Record<string, string>,
-  bodyText: string,
-): string {
+function buildGenericHtml(variables: Record<string, string>, bodyText: string): string {
   const nama = escapeHtml(variables.nama ?? "Pengguna");
 
   const content = `

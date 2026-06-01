@@ -1,6 +1,6 @@
 import { and, count, eq, lte, sql } from "drizzle-orm";
 
-import { getDb, withTenantDb } from "@/lib/server/db";
+import { getDb } from "@/lib/server/db";
 import { room, subscription, tenantSaas } from "@/lib/server/db/schema";
 
 // ---------------------------------------------------------------------------
@@ -55,7 +55,16 @@ const PLAN_LIMITS: Record<Plan, PlanLimits> = {
   },
   enterprise: {
     maxRooms: Number.POSITIVE_INFINITY,
-    channels: ["QRIS", "BCA_VA", "MANDIRI_VA", "BNI_VA", "GOPAY", "OVO", "DANA", "RETAIL"],
+    channels: [
+      "QRIS",
+      "BCA_VA",
+      "MANDIRI_VA",
+      "BNI_VA",
+      "GOPAY",
+      "OVO",
+      "DANA",
+      "RETAIL",
+    ],
     features: [
       "billing",
       "notifications",
@@ -101,7 +110,7 @@ function formatDateStr(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-function daysBetween(a: Date, b: Date): number {
+function _daysBetween(a: Date, b: Date): number {
   const msPerDay = 1000 * 60 * 60 * 24;
   return Math.round((b.getTime() - a.getTime()) / msPerDay);
 }
@@ -358,9 +367,13 @@ export class SubscriptionService {
   }> {
     const db = getDb();
     const now = new Date();
-    const today = formatDateStr(now);
+    const _today = formatDateStr(now);
 
-    const result = { reminders: 0, suspended: 0, errors: [] as { tenantId: string; error: string }[] };
+    const result = {
+      reminders: 0,
+      suspended: 0,
+      errors: [] as { tenantId: string; error: string }[],
+    };
 
     // -----------------------------------------------------------------------
     // 1. Send H-3 trial expiry reminders — Req 10.2
@@ -413,12 +426,7 @@ export class SubscriptionService {
     const expiredTrials = await db
       .select({ id: tenantSaas.id })
       .from(tenantSaas)
-      .where(
-        and(
-          eq(tenantSaas.status, "trial"),
-          lte(tenantSaas.trialEndsAt, now),
-        ),
-      );
+      .where(and(eq(tenantSaas.status, "trial"), lte(tenantSaas.trialEndsAt, now)));
 
     for (const tenant of expiredTrials) {
       try {

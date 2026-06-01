@@ -31,12 +31,7 @@ export interface UploadResult {
   size: number;
 }
 
-export type FileCategory =
-  | "ktp"
-  | "contract"
-  | "transfer_proof"
-  | "logo"
-  | "attachment";
+export type FileCategory = "ktp" | "contract" | "transfer_proof" | "logo" | "attachment";
 
 export interface UploadMetadata {
   propertyId?: string;
@@ -219,9 +214,7 @@ export class StorageService {
     const trashKey = `_trash/${key}`;
 
     // Read original
-    const getResult = await s3.send(
-      new GetObjectCommand({ Bucket: bucket, Key: key }),
-    );
+    const getResult = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
 
     if (getResult.Body) {
       const bodyBytes = await getResult.Body.transformToByteArray();

@@ -9,14 +9,14 @@
  * Requirements: 13.6
  */
 
-import { withAuth } from "@/lib/server/auth/rbac";
 import {
-  superAdminService,
   type BroadcastMessage,
   type ListTenantsFilters,
   type PlatformMetrics,
+  superAdminService,
   type TenantSaasSummary,
 } from "@/lib/server/admin/service";
+import { withAuth } from "@/lib/server/auth/rbac";
 
 // ---------------------------------------------------------------------------
 // getPlatformMetrics — Req 13.1
