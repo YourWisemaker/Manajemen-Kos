@@ -147,7 +147,11 @@ export class MockDataSource implements DataSource {
   }
 
   async getInvoiceByToken(token: string): Promise<PublicInvoiceView | null> {
-    const view = PUBLIC_INVOICES[token];
+    // Use an own-property check so inherited members of the lookup object
+    // (e.g. "toString", "constructor") are never treated as valid tokens.
+    const view = Object.hasOwn(PUBLIC_INVOICES, token)
+      ? PUBLIC_INVOICES[token]
+      : undefined;
     // Unknown tokens resolve to null (Requirement 19.4).
     return withLatency(view ? clone(view) : null);
   }

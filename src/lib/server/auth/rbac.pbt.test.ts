@@ -4,10 +4,10 @@ import { pbtConfig } from "@/test/pbt";
 
 import {
   hasPermission,
+  meetsRoleRequirement,
   type Permission,
   ROLE_PERMISSIONS,
   type Role,
-  meetsRoleRequirement,
 } from "./rbac";
 
 /**
