@@ -17,8 +17,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { dataSource, PRIMARY_TENANT_ID, type Property, type Room } from "@/lib/data";
 import copy from "@/lib/locale/copy/id";
-import { dataSource, PRIMARY_TENANT_ID, type Property, type Room } from "@/lib/mock";
 import { roomSchema, submitHandler, useZodForm } from "@/lib/schemas";
 import { useTenant } from "@/lib/tenant";
 

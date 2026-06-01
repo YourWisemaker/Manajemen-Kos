@@ -11,7 +11,7 @@
 
 import { eq } from "drizzle-orm";
 
-import type { TenantSettings } from "@/lib/mock/types";
+import type { TenantSettings } from "@/lib/data";
 import { withAuth } from "@/lib/server/auth/rbac";
 import { RealDataSource } from "@/lib/server/datasource";
 import { getDb } from "@/lib/server/db";

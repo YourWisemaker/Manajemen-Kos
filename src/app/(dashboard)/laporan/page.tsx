@@ -28,9 +28,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { chartSeries, chartTheme, chartTooltipStyle } from "@/lib/charts/theme";
+import { dataSource, PRIMARY_TENANT_ID, type ReportBundle } from "@/lib/data";
 import copy from "@/lib/locale/copy/id";
 import { formatRupiah } from "@/lib/locale/rupiah";
-import { dataSource, PRIMARY_TENANT_ID, type ReportBundle } from "@/lib/mock";
 import { useTenant } from "@/lib/tenant";
 
 /**

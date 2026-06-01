@@ -9,7 +9,7 @@
  * Requirements: 5.1, 4.1
  */
 
-import type { DashboardSummary } from "@/lib/mock/types";
+import type { DashboardSummary } from "@/lib/data";
 import { withAuth } from "@/lib/server/auth/rbac";
 import { RealDataSource } from "@/lib/server/datasource";
 import { requireTenantId } from "@/lib/server/tenant";

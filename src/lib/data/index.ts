@@ -13,8 +13,17 @@
  */
 
 import type { DataSource } from "@/lib/mock/datasource";
+import { dataSource as mockDataSource } from "@/lib/mock/datasource";
 
-export type { DataSource } from "@/lib/mock/datasource";
+export type { DataSource, MockDataSource } from "@/lib/mock/datasource";
+// Re-export fixture constants so pages can import from `@/lib/data` instead of `@/lib/mock`
+export {
+  KNOWN_PAYMENT_TOKEN,
+  PAYMENT_CHANNELS,
+  PRIMARY_TENANT_ID,
+  PRIMARY_TENANT_SEED,
+  PROPERTY_IDS,
+} from "@/lib/mock/fixtures";
 // Re-export all view-model types so consumers can import from `@/lib/data`
 export type {
   Contract,
@@ -37,6 +46,16 @@ export type {
   UUID,
 } from "@/lib/mock/types";
 
+function createDataSource(): DataSource {
+  if (process.env.USE_REAL_DB === "true") {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { RealDataSource } =
+      require("@/lib/server/datasource") as typeof import("@/lib/server/datasource");
+    return new RealDataSource();
+  }
+  return mockDataSource;
+}
+
 /**
  * The active DataSource instance. Determined at module load time by the
  * `USE_REAL_DB` environment variable.
@@ -44,17 +63,4 @@ export type {
  * - `USE_REAL_DB=true` → RealDataSource (PostgreSQL via Drizzle ORM)
  * - Otherwise → MockDataSource (in-memory fixtures)
  */
-export const dataSource: DataSource =
-  process.env.USE_REAL_DB === "true"
-    ? (() => {
-        // Dynamic require to avoid importing server-only code in client bundles
-        // when USE_REAL_DB is not set.
-        const { RealDataSource } =
-          require("@/lib/server/datasource") as typeof import("@/lib/server/datasource");
-        return new RealDataSource();
-      })()
-    : (() => {
-        const { dataSource: mock } =
-          require("@/lib/mock/datasource") as typeof import("@/lib/mock/datasource");
-        return mock;
-      })();
+export const dataSource: DataSource = createDataSource();

@@ -23,16 +23,16 @@ import { CardSkeleton, FadeIn, ListSkeleton } from "@/components/shared";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { chartTheme, chartTooltipStyle } from "@/lib/charts/theme";
-import copy from "@/lib/locale/copy/id";
-import { formatTanggalWaktu, relativeJatuhTempo } from "@/lib/locale/datetime";
-import { formatRupiah } from "@/lib/locale/rupiah";
 import {
   type DashboardSummary,
   dataSource,
   type Invoice,
   PRIMARY_TENANT_ID,
   type Property,
-} from "@/lib/mock";
+} from "@/lib/data";
+import copy from "@/lib/locale/copy/id";
+import { formatTanggalWaktu, relativeJatuhTempo } from "@/lib/locale/datetime";
+import { formatRupiah } from "@/lib/locale/rupiah";
 import { useTenant } from "@/lib/tenant";
 
 /**

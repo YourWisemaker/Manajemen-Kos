@@ -26,9 +26,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { dataSource, type Invoice, PRIMARY_TENANT_ID, type Property } from "@/lib/data";
 import copy from "@/lib/locale/copy/id";
 import { formatTanggal, relativeJatuhTempo } from "@/lib/locale/datetime";
-import { dataSource, type Invoice, PRIMARY_TENANT_ID, type Property } from "@/lib/mock";
 import { useTenant } from "@/lib/tenant";
 import {
   ALL_FILTER,

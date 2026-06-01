@@ -10,7 +10,7 @@
  * Requirements: 5.5, 6.2
  */
 
-import type { PublicInvoiceView } from "@/lib/mock/types";
+import type { PublicInvoiceView } from "@/lib/data";
 import { withAuth } from "@/lib/server/auth/rbac";
 import { RealDataSource } from "@/lib/server/datasource";
 import {

@@ -10,8 +10,8 @@ import { Skeleton } from "@/components/shared/skeleton";
 import { PayShell } from "@/components/shells/pay-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { dataSource, type PaymentChannelView, type PublicInvoiceView } from "@/lib/data";
 import { formatTanggal, relativeJatuhTempo } from "@/lib/locale/datetime";
-import { dataSource, type PaymentChannelView, type PublicInvoiceView } from "@/lib/mock";
 import { cn } from "@/lib/utils";
 import {
   type ChannelGroup,

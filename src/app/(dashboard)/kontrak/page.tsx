@@ -17,8 +17,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { type Contract, dataSource, PRIMARY_TENANT_ID } from "@/lib/data";
 import { formatTanggal } from "@/lib/locale/datetime";
-import { type Contract, dataSource, PRIMARY_TENANT_ID } from "@/lib/mock";
 import { useTenant } from "@/lib/tenant";
 
 /**

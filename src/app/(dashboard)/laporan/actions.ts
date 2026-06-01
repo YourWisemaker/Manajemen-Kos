@@ -9,7 +9,7 @@
  * Requirements: 5.1, 4.1
  */
 
-import type { DateRange, ReportBundle } from "@/lib/mock/types";
+import type { DateRange, ReportBundle } from "@/lib/data";
 import { withAuth } from "@/lib/server/auth/rbac";
 import { RealDataSource } from "@/lib/server/datasource";
 import { requireTenantId } from "@/lib/server/tenant";

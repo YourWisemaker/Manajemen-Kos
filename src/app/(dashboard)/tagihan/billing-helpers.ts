@@ -13,7 +13,7 @@
  * Requirements: 12.1, 12.2, 12.4, 12.5
  */
 
-import type { DateRange, Invoice, InvoiceFilter, Property } from "@/lib/mock";
+import type { DateRange, Invoice, InvoiceFilter, Property } from "@/lib/data";
 
 /** Sentinel value used by the status/property/period selects for "no filter". */
 export const ALL_FILTER = "semua" as const;

@@ -44,9 +44,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { chartTheme, chartTooltipStyle } from "@/lib/charts/theme";
+import { dataSource, type PlatformMetrics, type TenantSaasSummary } from "@/lib/data";
 import { formatTanggal } from "@/lib/locale/datetime";
 import { formatRupiah } from "@/lib/locale/rupiah";
-import { dataSource, type PlatformMetrics, type TenantSaasSummary } from "@/lib/mock";
 
 /**
  * Super Admin Console — Task 21 (Requirements 16.1–16.5)

@@ -12,7 +12,7 @@
 import { and, eq } from "drizzle-orm";
 import { withAuth } from "@/lib/server/auth/rbac";
 import { getDb } from "@/lib/server/db";
-import { gatewayConfig, paymentChannel } from "@/lib/server/db/schema";
+import { gatewayConfig, invoice, payment, paymentChannel } from "@/lib/server/db/schema";
 import type { PaymentChannelView } from "@/lib/server/payments/gateway";
 import { encrypt } from "@/lib/server/payments/gateway";
 import { requireTenantId } from "@/lib/server/tenant";
@@ -243,4 +243,47 @@ export const getPublicActiveChannels = withAuth(
     }));
   },
   { allowPublic: true },
+);
+
+// ---------------------------------------------------------------------------
+// Cash Recording — PRD requirement: manual cash payment recording
+// ---------------------------------------------------------------------------
+
+export interface RecordCashPaymentInput {
+  invoiceId: string;
+  amountPaid: number;
+}
+
+/** Record a manual cash payment against an invoice. */
+export const recordCashPayment = withAuth(
+  async (input: RecordCashPaymentInput): Promise<{ paymentId: string }> => {
+    const tenantId = requireTenantId();
+    const db = getDb();
+
+    const crypto = await import("node:crypto");
+    const reference = `CASH-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+
+    const [pay] = await db
+      .insert(payment)
+      .values({
+        tenantId,
+        invoiceId: input.invoiceId,
+        paymentReference: reference,
+        channelCode: "CASH",
+        method: "cash",
+        amountPaid: input.amountPaid.toFixed(2),
+        adminFee: "0",
+        paidAt: new Date(),
+        status: "success",
+      })
+      .returning({ id: payment.id });
+
+    await db
+      .update(invoice)
+      .set({ status: "lunas", updatedAt: new Date() })
+      .where(and(eq(invoice.id, input.invoiceId), eq(invoice.tenantId, tenantId)));
+
+    return { paymentId: pay.id };
+  },
+  { requiredPermission: "payment:verify" },
 );

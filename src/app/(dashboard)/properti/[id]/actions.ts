@@ -13,7 +13,8 @@ import { and, desc, eq } from "drizzle-orm";
 
 import { withAuth } from "@/lib/server/auth/rbac";
 import { getDb } from "@/lib/server/db";
-import { meterReading } from "@/lib/server/db/schema";
+import { meterReading, room } from "@/lib/server/db/schema";
+import { subscriptionService } from "@/lib/server/subscriptions/service";
 import { requireTenantId } from "@/lib/server/tenant";
 
 // ---------------------------------------------------------------------------
@@ -100,4 +101,118 @@ export const listMeterReadings = withAuth(
     return rows;
   },
   { requiredPermission: "room:write" },
+);
+
+// ---------------------------------------------------------------------------
+// Room CRUD Actions
+// ---------------------------------------------------------------------------
+
+export interface CreateRoomInput {
+  propertyId: string;
+  number: string;
+  type: string;
+  monthlyPrice: number;
+  facilities?: string[];
+}
+
+export interface UpdateRoomInput {
+  number?: string;
+  type?: string;
+  monthlyPrice?: number;
+  status?: string;
+  facilities?: string[];
+}
+
+export interface RoomView {
+  id: string;
+  propertyId: string;
+  number: string;
+  type: string;
+  monthlyPrice: string;
+  status: string;
+  facilities: unknown;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export const createRoom = withAuth(
+  async (data: CreateRoomInput): Promise<{ id: string }> => {
+    const tenantId = requireTenantId();
+    const db = getDb();
+
+    const limits = await subscriptionService.checkLimits(tenantId);
+    if (!limits.withinLimits) {
+      throw new Error(
+        `Batas kamar tercapai (${limits.currentRooms}/${limits.maxRooms}). Upgrade paket Anda untuk menambah kamar.`,
+      );
+    }
+
+    const [created] = await db
+      .insert(room)
+      .values({
+        tenantId,
+        propertyId: data.propertyId,
+        number: data.number,
+        type: data.type,
+        monthlyPrice: data.monthlyPrice.toFixed(2),
+        facilities: data.facilities ?? [],
+      })
+      .returning({ id: room.id });
+
+    return { id: created.id };
+  },
+  { requiredPermission: "room:write" },
+);
+
+export const updateRoom = withAuth(
+  async (roomId: string, data: UpdateRoomInput): Promise<void> => {
+    const tenantId = requireTenantId();
+    const db = getDb();
+
+    const updatePayload: Record<string, unknown> = { updatedAt: new Date() };
+    if (data.number !== undefined) updatePayload.number = data.number;
+    if (data.type !== undefined) updatePayload.type = data.type;
+    if (data.monthlyPrice !== undefined)
+      updatePayload.monthlyPrice = data.monthlyPrice.toFixed(2);
+    if (data.status !== undefined) updatePayload.status = data.status;
+    if (data.facilities !== undefined) updatePayload.facilities = data.facilities;
+
+    await db
+      .update(room)
+      .set(updatePayload)
+      .where(and(eq(room.id, roomId), eq(room.tenantId, tenantId)));
+  },
+  { requiredPermission: "room:write" },
+);
+
+export const listRoomsByProperty = withAuth(
+  async (propertyId: string): Promise<RoomView[]> => {
+    const tenantId = requireTenantId();
+    const db = getDb();
+
+    const rows = await db
+      .select()
+      .from(room)
+      .where(and(eq(room.propertyId, propertyId), eq(room.tenantId, tenantId)))
+      .orderBy(room.number);
+
+    return rows;
+  },
+  { requiredPermission: "property:write" },
+);
+
+export const getRoom = withAuth(
+  async (roomId: string): Promise<RoomView | null> => {
+    const tenantId = requireTenantId();
+    const db = getDb();
+
+    const [r] = await db
+      .select()
+      .from(room)
+      .where(and(eq(room.id, roomId), eq(room.tenantId, tenantId)))
+      .limit(1);
+
+    return r ?? null;
+  },
+  { requiredPermission: "property:write" },
 );

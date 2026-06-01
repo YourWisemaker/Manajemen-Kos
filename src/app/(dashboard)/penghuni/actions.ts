@@ -11,7 +11,7 @@
 
 import { and, eq } from "drizzle-orm";
 
-import type { Resident } from "@/lib/mock/types";
+import type { Resident } from "@/lib/data";
 import { withAuth } from "@/lib/server/auth/rbac";
 import { RealDataSource } from "@/lib/server/datasource";
 import { getDb } from "@/lib/server/db";

@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { dataSource, PRIMARY_TENANT_ID, type TenantSettings } from "@/lib/data";
 import copy from "@/lib/locale/copy/id";
-import { dataSource, PRIMARY_TENANT_ID, type TenantSettings } from "@/lib/mock";
 import { subdomainSchema } from "@/lib/schemas";
 import { OwnerAction, useTenant } from "@/lib/tenant";
 

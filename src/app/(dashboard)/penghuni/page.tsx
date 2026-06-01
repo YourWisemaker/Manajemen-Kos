@@ -26,8 +26,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { dataSource, PRIMARY_TENANT_ID, type Resident } from "@/lib/data";
 import copy from "@/lib/locale/copy/id";
-import { dataSource, PRIMARY_TENANT_ID, type Resident } from "@/lib/mock";
 import { residentSchema, submitHandler, useZodForm } from "@/lib/schemas";
 import { useTenant } from "@/lib/tenant";
 

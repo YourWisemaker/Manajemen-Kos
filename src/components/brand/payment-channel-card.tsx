@@ -8,7 +8,7 @@ import {
   Store,
   Wallet,
 } from "lucide-react";
-import type { PaymentChannelView } from "@/lib/mock/types";
+import type { PaymentChannelView } from "@/lib/data";
 import { cn } from "@/lib/utils";
 
 /**

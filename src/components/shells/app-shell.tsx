@@ -37,7 +37,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { BrandMark } from "@/components/brand";
 import { Input } from "@/components/ui/input";
-import type { TenantSettings } from "@/lib/mock";
+import type { TenantSettings } from "@/lib/data";
 import {
   DEFAULT_TENANT,
   filterNavByRole,

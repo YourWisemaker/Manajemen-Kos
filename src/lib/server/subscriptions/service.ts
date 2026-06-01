@@ -2,6 +2,7 @@ import { and, count, eq, lte, sql } from "drizzle-orm";
 
 import { getDb } from "@/lib/server/db";
 import { room, subscription, tenantSaas } from "@/lib/server/db/schema";
+import { notificationService } from "@/lib/server/notifications";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -495,4 +496,4 @@ export class SubscriptionService {
 // Singleton export
 // ---------------------------------------------------------------------------
 
-export const subscriptionService = new SubscriptionService();
+export const subscriptionService = new SubscriptionService(notificationService);

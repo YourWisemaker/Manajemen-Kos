@@ -7,8 +7,8 @@ import { useEffect, useState } from "react";
 import { EmptyState, OccupancyMeter } from "@/components/brand";
 import { CardSkeleton, FadeIn } from "@/components/shared";
 import { Card, CardContent } from "@/components/ui/card";
+import { dataSource, PRIMARY_TENANT_ID, type Property } from "@/lib/data";
 import copy from "@/lib/locale/copy/id";
-import { dataSource, PRIMARY_TENANT_ID, type Property } from "@/lib/mock";
 import { useTenant } from "@/lib/tenant";
 
 /**

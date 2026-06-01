@@ -21,7 +21,7 @@
  */
 
 import { createContext, type ReactNode, useContext, useMemo, useState } from "react";
-import { PRIMARY_TENANT_SEED, type TenantSettings } from "@/lib/mock";
+import { PRIMARY_TENANT_SEED, type TenantSettings } from "@/lib/data";
 
 /** The roles a tenant user can hold; drives visual RBAC gating. */
 export type TenantRole = "owner" | "admin" | "staff";

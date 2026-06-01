@@ -11,7 +11,7 @@
 
 import crypto from "node:crypto";
 
-import type { Invoice, InvoiceFilter } from "@/lib/mock/types";
+import type { Invoice, InvoiceFilter } from "@/lib/data";
 import { withAuth } from "@/lib/server/auth/rbac";
 import { RealDataSource } from "@/lib/server/datasource";
 import { getDb } from "@/lib/server/db";

@@ -1,6 +1,6 @@
+import type { Contract } from "@/lib/data";
 import { formatTanggal } from "@/lib/locale/datetime";
 import { formatRupiah } from "@/lib/locale/rupiah";
-import type { Contract } from "@/lib/mock";
 
 /**
  * PrintableContract — Task 16.2

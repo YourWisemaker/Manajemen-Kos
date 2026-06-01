@@ -20,7 +20,7 @@
  * Requirements: 13.3, 13.4
  */
 
-import type { PaymentChannelView } from "@/lib/mock";
+import type { PaymentChannelView } from "@/lib/data";
 
 /** The payment-channel type union (mirrors {@link PaymentChannelView.type}). */
 export type ChannelType = PaymentChannelView["type"];

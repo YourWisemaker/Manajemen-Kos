@@ -11,9 +11,16 @@ import crypto from "node:crypto";
 
 import { and, eq } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
-
+import { formatRupiah } from "@/lib/locale/rupiah";
 import { getDb } from "@/lib/server/db";
-import { gatewayConfig, invoice, payment } from "@/lib/server/db/schema";
+import {
+  contract,
+  gatewayConfig,
+  invoice,
+  kosTenant,
+  payment,
+} from "@/lib/server/db/schema";
+import { notificationService } from "@/lib/server/notifications";
 import { decrypt } from "@/lib/server/payments/gateway";
 
 // ---------------------------------------------------------------------------
@@ -114,8 +121,52 @@ export async function POST(
           .where(and(eq(invoice.id, invoiceId), eq(invoice.tenantId, tenantId)));
       });
 
-      // TODO: Trigger notification to resident + tenant owner (Task 10)
-      // await notificationService.send({ type: "payment_success", ... });
+      // Trigger notification to resident + tenant owner — Req 7.7
+      try {
+        const [invData] = await db
+          .select({
+            invoiceNumber: invoice.invoiceNumber,
+            contractId: invoice.contractId,
+            total: invoice.total,
+          })
+          .from(invoice)
+          .where(eq(invoice.id, invoiceId))
+          .limit(1);
+
+        if (invData?.contractId) {
+          const [contractData] = await db
+            .select({
+              residentName: kosTenant.fullName,
+              residentPhone: kosTenant.phone,
+              residentEmail: kosTenant.email,
+            })
+            .from(contract)
+            .innerJoin(kosTenant, eq(contract.kosTenantId, kosTenant.id))
+            .where(eq(contract.id, invData.contractId))
+            .limit(1);
+
+          const amountFormatted = formatRupiah(
+            Number(invData.total ?? extractAmount(provider, body)),
+            { showSymbol: false },
+          );
+
+          if (contractData) {
+            await notificationService.send({
+              type: "payment_success",
+              tenantId,
+              recipientPhone: contractData.residentPhone ?? undefined,
+              recipientEmail: contractData.residentEmail ?? undefined,
+              variables: {
+                nama: contractData.residentName,
+                jumlah: amountFormatted,
+                invoice_number: invData.invoiceNumber,
+              },
+            });
+          }
+        }
+      } catch (notifErr) {
+        console.error("[webhook] Notification failed (non-blocking):", notifErr);
+      }
     } else if (eventType === "payment.expired") {
       // Update payment status to "expired". Req 7.5
       if (existingPayment) {

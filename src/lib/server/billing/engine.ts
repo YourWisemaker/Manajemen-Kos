@@ -38,10 +38,19 @@ export interface BillingConfig {
   gracePeriodDays: number;
 }
 
+export interface GeneratedInvoiceInfo {
+  tenantId: string;
+  invoiceId: string;
+  contractId: string;
+  total: string;
+  dueDate: string;
+}
+
 export interface BillingResult {
   generated: number;
   skipped: number;
   errors: { contractId: string; error: string }[];
+  invoices: GeneratedInvoiceInfo[];
 }
 
 export interface DepositRefundResult {
@@ -95,6 +104,20 @@ function daysInMonth(date: Date): number {
   return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
 }
 
+/**
+ * Parse a `YYYY-MM-DD` date-only string into a Date at LOCAL midnight.
+ *
+ * `new Date("2025-02-15")` parses as UTC midnight, which then drifts by a day
+ * when read back with local getters (getDate/getMonth/getFullYear) on servers
+ * in a negative UTC offset. All other date math in this module uses local
+ * getters, so we parse stored date-only columns into a local Date to stay
+ * consistent and timezone-safe.
+ */
+function parseDateOnly(value: string): Date {
+  const [y, m, d] = value.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
 // ---------------------------------------------------------------------------
 // BillingEngine — Req 8.1–8.9, 16.1–16.2, 17.2
 // ---------------------------------------------------------------------------
@@ -131,7 +154,7 @@ export class BillingEngine {
       .from(tenantSaas)
       .where(eq(tenantSaas.status, "active"));
 
-    const results: BillingResult = { generated: 0, skipped: 0, errors: [] };
+    const results: BillingResult = { generated: 0, skipped: 0, errors: [], invoices: [] };
 
     for (const { id: tenantId } of tenants) {
       await withTenantContext(
@@ -170,25 +193,21 @@ export class BillingEngine {
                   continue;
                 }
 
-                // Billing components for the property
-                const components = await tdb
-                  .select()
-                  .from(billingComponent)
-                  .where(eq(billingComponent.propertyId, c.roomId));
-
-                // Also get property-level components
+                // Resolve the property that owns this contract's room.
                 const roomData = await tdb
                   .select({ propertyId: room.propertyId })
                   .from(room)
                   .where(eq(room.id, c.roomId));
 
                 const propertyId = roomData[0]?.propertyId;
+
+                // Billing components are scoped to the property — Req 8.2.
                 const propertyComponents = propertyId
                   ? await tdb
                       .select()
                       .from(billingComponent)
                       .where(eq(billingComponent.propertyId, propertyId))
-                  : components;
+                  : [];
 
                 // Build line items — Req 8.2, 8.3
                 const lines = await this.buildInvoiceLines(
@@ -203,6 +222,7 @@ export class BillingEngine {
                   .toFixed(2);
 
                 // Create invoice + lines in a transaction — Req 8.4, 8.5
+                let createdInvoiceId = "";
                 await tdb.transaction(async (tx) => {
                   const invNumber = await this.generateInvoiceNumber(tx, tenantId);
                   const token = crypto.randomUUID();
@@ -231,9 +251,18 @@ export class BillingEngine {
                       componentType: l.componentType,
                     })),
                   );
+
+                  createdInvoiceId = inv.id;
                 });
 
                 results.generated++;
+                results.invoices.push({
+                  tenantId,
+                  invoiceId: createdInvoiceId,
+                  contractId: c.id,
+                  total,
+                  dueDate: dueDateStr,
+                });
               } catch (err) {
                 results.errors.push({
                   contractId: c.id,
@@ -429,7 +458,7 @@ export class BillingEngine {
     }
 
     const tenantId = contractData.tenantId;
-    const startDate = new Date(contractData.startDate);
+    const startDate = parseDateOnly(contractData.startDate);
     const totalDays = daysInMonth(startDate);
     const remainingDays = totalDays - startDate.getDate() + 1;
     const prorationFactor = remainingDays / totalDays;

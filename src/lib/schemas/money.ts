@@ -15,9 +15,9 @@
  */
 
 import { z } from "zod";
+import type { IDR } from "@/lib/data";
 import { copy } from "@/lib/locale/copy/id";
 import { parseRupiah } from "@/lib/locale/rupiah";
-import type { IDR } from "@/lib/mock/types";
 
 const { angkaTidakValid, nilaiNegatif } = copy.validasi;
 

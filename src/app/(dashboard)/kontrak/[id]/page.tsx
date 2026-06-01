@@ -9,8 +9,8 @@ import { RupiahText, StatusBadge } from "@/components/brand";
 import { CardSkeleton, FadeIn, NotFound } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { type Contract, dataSource, PRIMARY_TENANT_ID } from "@/lib/data";
 import { formatTanggal } from "@/lib/locale/datetime";
-import { type Contract, dataSource, PRIMARY_TENANT_ID } from "@/lib/mock";
 import { useTenant } from "@/lib/tenant";
 import { PrintableContract } from "../printable-contract";
 
