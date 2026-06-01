@@ -1,6 +1,7 @@
 "use client";
 
-import { Plus, Search, Upload, User } from "lucide-react";
+import { FileText, Plus, Search, Upload, User } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { EmptyState, StatusBadge } from "@/components/brand";
@@ -269,6 +270,17 @@ function ResidentDetailDialog({ resident, onOpenChange }: ResidentDetailDialogPr
             {/* Current room */}
             <DetailSection title="Kamar Saat Ini">
               <p className="text-sm">{resident.roomNumber ?? "Tidak ada kamar"}</p>
+            </DetailSection>
+
+            {/* Contract cross-surface link (residents → contracts) */}
+            <DetailSection title="Kontrak">
+              <Link
+                href="/kontrak"
+                className="inline-flex items-center gap-2 text-sm font-medium text-brand-pandan-600 hover:underline"
+              >
+                <FileText className="lucide size-4" aria-hidden="true" />
+                Lihat kontrak penghuni
+              </Link>
             </DetailSection>
 
             {/* Payment history placeholder */}
