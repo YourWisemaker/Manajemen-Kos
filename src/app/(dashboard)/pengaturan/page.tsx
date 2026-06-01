@@ -10,10 +10,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { dataSource, PRIMARY_TENANT_ID, type TenantSettings } from "@/lib/data";
+import { type TenantSettings } from "@/lib/data";
 import copy from "@/lib/locale/copy/id";
 import { subdomainSchema } from "@/lib/schemas";
-import { OwnerAction, useTenant } from "@/lib/tenant";
+import { OwnerAction } from "@/lib/tenant";
+import { getTenantSettings } from "./actions";
 
 /**
  * Tenant Settings Page — Task 20
@@ -26,13 +27,11 @@ import { OwnerAction, useTenant } from "@/lib/tenant";
  */
 
 export default function PengaturanPage() {
-  const { tenant } = useTenant();
   const [settings, setSettings] = useState<TenantSettings | null>(null);
 
   useEffect(() => {
-    const tenantId = tenant.id || PRIMARY_TENANT_ID;
-    dataSource.getTenantSettings(tenantId).then(setSettings);
-  }, [tenant.id]);
+    getTenantSettings().then(setSettings);
+  }, []);
 
   if (!settings) {
     return (

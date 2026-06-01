@@ -26,10 +26,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { dataSource, type Invoice, PRIMARY_TENANT_ID, type Property } from "@/lib/data";
+import { type Invoice, type Property } from "@/lib/data";
 import copy from "@/lib/locale/copy/id";
 import { formatTanggal, relativeJatuhTempo } from "@/lib/locale/datetime";
-import { useTenant } from "@/lib/tenant";
 import {
   ALL_FILTER,
   buildInvoiceFilter,
@@ -40,6 +39,8 @@ import {
   simulateBulkInvoiceCount,
   TIMELINE_STEPS,
 } from "./billing-helpers";
+import { listInvoices } from "./actions";
+import { listProperties } from "../properti/actions";
 
 /**
  * Billing / Invoices Page — Task 17
@@ -66,8 +67,6 @@ const STATUS_TABS: { value: StatusFilter; label: string }[] = [
 ];
 
 export default function TagihanPage() {
-  const { tenant } = useTenant();
-
   // All invoices (unfiltered) — used to derive the period options.
   const [allInvoices, setAllInvoices] = useState<Invoice[] | null>(null);
   const [properties, setProperties] = useState<Property[]>([]);
@@ -85,20 +84,18 @@ export default function TagihanPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showBulkDialog, setShowBulkDialog] = useState(false);
 
-  const tenantId = tenant.id || PRIMARY_TENANT_ID;
-
   // Load the full invoice set + properties once (for filter option lists).
   useEffect(() => {
-    dataSource.listInvoices(tenantId).then(setAllInvoices);
-    dataSource.listProperties(tenantId).then(setProperties);
-  }, [tenantId]);
+    listInvoices().then(setAllInvoices);
+    listProperties().then(setProperties);
+  }, []);
 
   // Re-fetch the filtered set whenever a filter changes (wired into the
   // DataSource's InvoiceFilter — Req 12.1).
   useEffect(() => {
     const filter = buildInvoiceFilter(statusFilter, propertyFilter, periodFilter);
-    dataSource.listInvoices(tenantId, filter).then(setInvoices);
-  }, [tenantId, statusFilter, propertyFilter, periodFilter]);
+    listInvoices(filter).then(setInvoices);
+  }, [statusFilter, propertyFilter, periodFilter]);
 
   const periodOptions = useMemo(
     () => buildPeriodOptions(allInvoices ?? []),

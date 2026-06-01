@@ -12,10 +12,8 @@
  * Requirements: 5.7
  */
 
-import type { DataSource } from "@/lib/mock/datasource";
-import { dataSource as mockDataSource } from "@/lib/mock/datasource";
-
 export type { DataSource, MockDataSource } from "@/lib/mock/datasource";
+export { dataSource } from "@/lib/mock/datasource";
 // Re-export fixture constants so pages can import from `@/lib/data` instead of `@/lib/mock`
 export {
   KNOWN_PAYMENT_TOKEN,
@@ -45,22 +43,3 @@ export type {
   TenantSettings,
   UUID,
 } from "@/lib/mock/types";
-
-function createDataSource(): DataSource {
-  if (process.env.USE_REAL_DB === "true") {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { RealDataSource } =
-      require("@/lib/server/datasource") as typeof import("@/lib/server/datasource");
-    return new RealDataSource();
-  }
-  return mockDataSource;
-}
-
-/**
- * The active DataSource instance. Determined at module load time by the
- * `USE_REAL_DB` environment variable.
- *
- * - `USE_REAL_DB=true` → RealDataSource (PostgreSQL via Drizzle ORM)
- * - Otherwise → MockDataSource (in-memory fixtures)
- */
-export const dataSource: DataSource = createDataSource();

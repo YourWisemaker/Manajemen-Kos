@@ -110,43 +110,11 @@ async function lookupSubdomainTenantId(subdomain: string): Promise<string | null
   const redis = await getRedis();
   const cacheKey = `tenant:subdomain:${subdomain}`;
 
-  // Try cache first
-  if (redis) {
-    try {
-      const cached = await redis.get<string>(cacheKey);
-      if (cached) return cached;
-    } catch {
-      // Redis unavailable — fall through to DB
-    }
-  }
-
-  // DB lookup (dynamic import to keep middleware lightweight)
+  if (!redis) return null;
   try {
-    const { eq } = await import("drizzle-orm");
-    const { getDb } = await import("@/lib/server/db");
-    const { tenantSaas } = await import("@/lib/server/db/schema/tenants");
-
-    const db = getDb();
-    const result = await db
-      .select({ id: tenantSaas.id })
-      .from(tenantSaas)
-      .where(eq(tenantSaas.subdomain, subdomain))
-      .limit(1);
-
-    const tenantId = result[0]?.id ?? null;
-
-    // Cache the result
-    if (tenantId && redis) {
-      try {
-        await redis.set(cacheKey, tenantId, { ex: SUBDOMAIN_CACHE_TTL });
-      } catch {
-        // Non-critical — continue without caching
-      }
-    }
-
-    return tenantId;
+    const cached = await redis.get<string>(cacheKey);
+    return cached ?? null;
   } catch {
-    // DB unavailable during build or test — return null
     return null;
   }
 }
@@ -156,19 +124,12 @@ async function lookupSubdomainTenantId(subdomain: string): Promise<string | null
 // ---------------------------------------------------------------------------
 
 async function lookupPaymentTokenTenantId(token: string): Promise<string | null> {
+  const redis = await getRedis();
+  if (!redis) return null;
   try {
-    const { eq } = await import("drizzle-orm");
-    const { getDb } = await import("@/lib/server/db");
-    const { invoice } = await import("@/lib/server/db/schema/invoices");
-
-    const db = getDb();
-    const result = await db
-      .select({ tenantId: invoice.tenantId })
-      .from(invoice)
-      .where(eq(invoice.paymentLinkToken, token))
-      .limit(1);
-
-    return result[0]?.tenantId ?? null;
+    const cacheKey = `tenant:payment-token:${token}`;
+    const cached = await redis.get<string>(cacheKey);
+    return cached ?? null;
   } catch {
     return null;
   }

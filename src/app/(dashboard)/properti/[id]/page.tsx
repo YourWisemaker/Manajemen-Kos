@@ -17,10 +17,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { dataSource, PRIMARY_TENANT_ID, type Property, type Room } from "@/lib/data";
+import { type Property, type Room } from "@/lib/data";
 import copy from "@/lib/locale/copy/id";
 import { roomSchema, submitHandler, useZodForm } from "@/lib/schemas";
-import { useTenant } from "@/lib/tenant";
+import { listProperties, listRooms } from "../actions";
 
 /**
  * Property detail page — Task 13.1 + 13.2
@@ -47,7 +47,6 @@ const STATUS_FILTERS: { label: string; value: RoomStatus | "semua" }[] = [
 export default function PropertyDetailPage() {
   const params = useParams<{ id: string }>();
   const propertyId = params.id;
-  const { tenant } = useTenant();
 
   const [property, setProperty] = useState<Property | null | undefined>(undefined);
   const [rooms, setRooms] = useState<Room[] | null>(null);
@@ -55,17 +54,19 @@ export default function PropertyDetailPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
-    const tenantId = tenant.id || PRIMARY_TENANT_ID;
+    let active = true;
 
-    // Fetch property info
-    dataSource.listProperties(tenantId).then((props) => {
+    Promise.all([listProperties(), listRooms(propertyId)]).then(([props, roomList]) => {
+      if (!active) return;
       const found = props.find((p) => p.id === propertyId);
       setProperty(found ?? null);
+      setRooms(roomList);
     });
 
-    // Fetch rooms for this property
-    dataSource.listRooms(tenantId, propertyId).then(setRooms);
-  }, [tenant.id, propertyId]);
+    return () => {
+      active = false;
+    };
+  }, [propertyId]);
 
   // Filtered rooms
   const filteredRooms = useMemo(() => {

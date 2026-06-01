@@ -9,10 +9,11 @@ import { RupiahText, StatusBadge } from "@/components/brand";
 import { CardSkeleton, FadeIn, NotFound } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { type Contract, dataSource, PRIMARY_TENANT_ID } from "@/lib/data";
+import { type Contract } from "@/lib/data";
 import { formatTanggal } from "@/lib/locale/datetime";
 import { useTenant } from "@/lib/tenant";
 import { PrintableContract } from "../printable-contract";
+import { listContracts } from "../actions";
 
 /**
  * Contract detail — Task 16.1 / 16.2
@@ -34,11 +35,10 @@ export default function ContractDetailPage() {
   const [contract, setContract] = useState<Contract | null | undefined>(undefined);
 
   useEffect(() => {
-    const tenantId = tenant.id || PRIMARY_TENANT_ID;
-    dataSource.listContracts(tenantId).then((contracts) => {
+    listContracts().then((contracts) => {
       setContract(contracts.find((c) => c.id === contractId) ?? null);
     });
-  }, [tenant.id, contractId]);
+  }, [contractId]);
 
   if (contract === undefined) {
     return (

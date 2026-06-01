@@ -28,10 +28,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { chartSeries, chartTheme, chartTooltipStyle } from "@/lib/charts/theme";
-import { dataSource, PRIMARY_TENANT_ID, type ReportBundle } from "@/lib/data";
+import { type ReportBundle } from "@/lib/data";
 import copy from "@/lib/locale/copy/id";
 import { formatRupiah } from "@/lib/locale/rupiah";
-import { useTenant } from "@/lib/tenant";
+import { getReports } from "./actions";
 
 /**
  * Reports & Analytics Page — Task 19
@@ -49,15 +49,13 @@ import { useTenant } from "@/lib/tenant";
 const PIE_COLORS = chartSeries;
 
 export default function LaporanPage() {
-  const { tenant } = useTenant();
   const [reports, setReports] = useState<ReportBundle | null>(null);
   const [startDate, setStartDate] = useState("2024-09-01");
   const [endDate, setEndDate] = useState("2025-02-28");
 
   useEffect(() => {
-    const tenantId = tenant.id || PRIMARY_TENANT_ID;
-    dataSource.getReports(tenantId, { start: startDate, end: endDate }).then(setReports);
-  }, [tenant.id, startDate, endDate]);
+    getReports({ start: startDate, end: endDate }).then(setReports);
+  }, [startDate, endDate]);
 
   const isLoading = reports === null;
 

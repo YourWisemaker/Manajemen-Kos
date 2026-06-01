@@ -11,7 +11,7 @@
 
 import { and, eq } from "drizzle-orm";
 
-import type { Property } from "@/lib/data";
+import type { Property, Room } from "@/lib/data";
 import { withAuth } from "@/lib/server/auth/rbac";
 import { RealDataSource } from "@/lib/server/datasource";
 import { getDb } from "@/lib/server/db";
@@ -45,6 +45,19 @@ export const listProperties = withAuth(
   async (): Promise<Property[]> => {
     const tenantId = requireTenantId();
     return dataSource.listProperties(tenantId);
+  },
+  { requiredPermission: "property:write" },
+);
+
+// ---------------------------------------------------------------------------
+// listRooms — Req 5.1
+// ---------------------------------------------------------------------------
+
+/** List rooms for a property (with status + pricing) for the current tenant. */
+export const listRooms = withAuth(
+  async (propertyId: string): Promise<Room[]> => {
+    const tenantId = requireTenantId();
+    return dataSource.listRooms(tenantId, propertyId);
   },
   { requiredPermission: "property:write" },
 );

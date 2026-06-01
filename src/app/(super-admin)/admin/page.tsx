@@ -44,9 +44,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { chartTheme, chartTooltipStyle } from "@/lib/charts/theme";
-import { dataSource, type PlatformMetrics, type TenantSaasSummary } from "@/lib/data";
 import { formatTanggal } from "@/lib/locale/datetime";
 import { formatRupiah } from "@/lib/locale/rupiah";
+import { type PlatformMetrics, type TenantSaasSummary } from "@/lib/data";
+import { getPlatformMetrics, listTenants } from "./actions";
 
 /**
  * Super Admin Console — Task 21 (Requirements 16.1–16.5)
@@ -125,11 +126,10 @@ export default function AdminPage() {
 
   useEffect(() => {
     let active = true;
-    Promise.all([dataSource.getPlatformMetrics(), dataSource.listTenants()]).then(
-      ([metricsData, tenantData]) => {
+    Promise.all([getPlatformMetrics(), listTenants()]).then(([metricsData, tenantData]) => {
         if (!active) return;
         setMetrics(metricsData);
-        setTenants(tenantData);
+        setTenants(tenantData.tenants);
       },
     );
     return () => {

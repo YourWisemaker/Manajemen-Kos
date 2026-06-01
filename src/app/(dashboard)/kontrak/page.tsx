@@ -17,9 +17,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { type Contract, dataSource, PRIMARY_TENANT_ID } from "@/lib/data";
+import { type Contract } from "@/lib/data";
 import { formatTanggal } from "@/lib/locale/datetime";
-import { useTenant } from "@/lib/tenant";
+import { listContracts } from "./actions";
 
 /**
  * Digital Contracts list — Task 16.1
@@ -34,14 +34,12 @@ import { useTenant } from "@/lib/tenant";
  * Requirements: 11.1, 21.1, 21.2, 21.3
  */
 export default function KontrakPage() {
-  const { tenant } = useTenant();
   const router = useRouter();
   const [contracts, setContracts] = useState<Contract[] | null>(null);
 
   useEffect(() => {
-    const tenantId = tenant.id || PRIMARY_TENANT_ID;
-    dataSource.listContracts(tenantId).then(setContracts);
-  }, [tenant.id]);
+    listContracts().then(setContracts);
+  }, []);
 
   const isLoading = contracts === null;
 

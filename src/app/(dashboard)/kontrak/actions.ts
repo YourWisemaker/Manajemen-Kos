@@ -11,13 +11,17 @@
  * Requirements: 16.1, 16.2, 16.3, 16.4, 16.5
  */
 
-import { and, desc, eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
+import type { Contract } from "@/lib/data";
 import { withAuth } from "@/lib/server/auth/rbac";
 import { billingEngine } from "@/lib/server/billing/engine";
+import { RealDataSource } from "@/lib/server/datasource";
 import { getDb } from "@/lib/server/db";
 import { contract, room } from "@/lib/server/db/schema";
 import { requireTenantId } from "@/lib/server/tenant";
+
+const dataSource = new RealDataSource();
 
 // ---------------------------------------------------------------------------
 // Types
@@ -30,19 +34,6 @@ export interface CreateContractInput {
   endDate: string;
   depositAmount: number;
   monthlyPrice: number;
-}
-
-export interface ContractView {
-  id: string;
-  roomId: string;
-  kosTenantId: string;
-  startDate: string;
-  endDate: string;
-  depositAmount: string;
-  monthlyPrice: string;
-  status: string;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 export interface TerminateContractResult {
@@ -161,28 +152,9 @@ export const terminateContract = withAuth(
 
 /** List all contracts for the current tenant, ordered by most recent first. */
 export const listContracts = withAuth(
-  async (): Promise<ContractView[]> => {
+  async (): Promise<Contract[]> => {
     const tenantId = requireTenantId();
-    const db = getDb();
-
-    const rows = await db
-      .select({
-        id: contract.id,
-        roomId: contract.roomId,
-        kosTenantId: contract.kosTenantId,
-        startDate: contract.startDate,
-        endDate: contract.endDate,
-        depositAmount: contract.depositAmount,
-        monthlyPrice: contract.monthlyPrice,
-        status: contract.status,
-        createdAt: contract.createdAt,
-        updatedAt: contract.updatedAt,
-      })
-      .from(contract)
-      .where(eq(contract.tenantId, tenantId))
-      .orderBy(desc(contract.createdAt));
-
-    return rows;
+    return dataSource.listContracts(tenantId);
   },
   { requiredPermission: "contract:write" },
 );

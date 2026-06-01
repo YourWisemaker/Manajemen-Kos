@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/shared/skeleton";
 import { PayShell } from "@/components/shells/pay-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { dataSource, type PaymentChannelView, type PublicInvoiceView } from "@/lib/data";
+import { type PaymentChannelView, type PublicInvoiceView } from "@/lib/data";
 import { formatTanggal, relativeJatuhTempo } from "@/lib/locale/datetime";
 import { cn } from "@/lib/utils";
 import {
@@ -21,6 +21,7 @@ import {
   groupChannels,
   qrPlaceholderMatrix,
 } from "./payment-helpers";
+import { getPublicInvoice } from "./actions";
 
 /**
  * Public payment page (`/pay/[token]`) — Task 18
@@ -56,7 +57,7 @@ export default function PaymentPage() {
     let active = true;
     setInvoice(undefined);
     setSelectedCode(null);
-    dataSource.getInvoiceByToken(token).then((result) => {
+    getPublicInvoice(token).then((result) => {
       if (active) setInvoice(result);
     });
     return () => {

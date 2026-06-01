@@ -7,9 +7,9 @@ import { useEffect, useState } from "react";
 import { EmptyState, OccupancyMeter } from "@/components/brand";
 import { CardSkeleton, FadeIn } from "@/components/shared";
 import { Card, CardContent } from "@/components/ui/card";
-import { dataSource, PRIMARY_TENANT_ID, type Property } from "@/lib/data";
+import { type Property } from "@/lib/data";
 import copy from "@/lib/locale/copy/id";
-import { useTenant } from "@/lib/tenant";
+import { listProperties } from "./actions";
 
 /**
  * Property list page — Task 13.1
@@ -21,13 +21,11 @@ import { useTenant } from "@/lib/tenant";
  * Requirements: 9.1, 21.1, 21.2, 21.3
  */
 export default function PropertiPage() {
-  const { tenant } = useTenant();
   const [properties, setProperties] = useState<Property[] | null>(null);
 
   useEffect(() => {
-    const tenantId = tenant.id || PRIMARY_TENANT_ID;
-    dataSource.listProperties(tenantId).then(setProperties);
-  }, [tenant.id]);
+    listProperties().then(setProperties);
+  }, []);
 
   // Loading state
   if (properties === null) {

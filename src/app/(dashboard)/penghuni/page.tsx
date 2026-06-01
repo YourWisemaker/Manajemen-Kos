@@ -26,10 +26,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { dataSource, PRIMARY_TENANT_ID, type Resident } from "@/lib/data";
+import { type Resident } from "@/lib/data";
 import copy from "@/lib/locale/copy/id";
 import { residentSchema, submitHandler, useZodForm } from "@/lib/schemas";
-import { useTenant } from "@/lib/tenant";
+import { listResidents } from "./actions";
 
 /**
  * Penghuni (Resident) Management Page — Task 14
@@ -51,8 +51,6 @@ function maskKtp(ktp: string): string {
 }
 
 export default function PenghuniPage() {
-  const { tenant } = useTenant();
-
   const [residents, setResidents] = useState<Resident[] | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("semua");
@@ -60,9 +58,8 @@ export default function PenghuniPage() {
   const [showAddDialog, setShowAddDialog] = useState(false);
 
   useEffect(() => {
-    const tenantId = tenant.id || PRIMARY_TENANT_ID;
-    dataSource.listResidents(tenantId).then(setResidents);
-  }, [tenant.id]);
+    listResidents().then(setResidents);
+  }, []);
 
   const isLoading = residents === null;
 

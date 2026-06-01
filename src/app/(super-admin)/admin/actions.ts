@@ -12,11 +12,36 @@
 import {
   type BroadcastMessage,
   type ListTenantsFilters,
-  type PlatformMetrics,
   superAdminService,
-  type TenantSaasSummary,
 } from "@/lib/server/admin/service";
 import { withAuth } from "@/lib/server/auth/rbac";
+import type { PlatformMetrics, TenantSaasSummary } from "@/lib/data";
+
+function buildMrrTrend(mrr: number): PlatformMetrics["mrrTrend"] {
+  const now = new Date();
+  const points: PlatformMetrics["mrrTrend"] = [];
+
+  for (let i = 5; i >= 0; i -= 1) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    points.push({ month, amount: Math.round(mrr) });
+  }
+
+  return points;
+}
+
+function mapPlan(plan: string): TenantSaasSummary["plan"] {
+  if (plan === "starter" || plan === "pro" || plan === "enterprise") return plan;
+  return "starter";
+}
+
+function mapStatus(status: string): TenantSaasSummary["status"] {
+  if (status === "trial") return "trial";
+  if (status === "active") return "aktif";
+  if (status === "suspended") return "ditangguhkan";
+  if (status === "cancelled") return "berhenti";
+  return "aktif";
+}
 
 // ---------------------------------------------------------------------------
 // getPlatformMetrics — Req 13.1
@@ -24,7 +49,12 @@ import { withAuth } from "@/lib/server/auth/rbac";
 
 export const getPlatformMetrics = withAuth(
   async (): Promise<PlatformMetrics> => {
-    return superAdminService.getPlatformMetrics();
+    const metrics = await superAdminService.getPlatformMetrics();
+    return {
+      ...metrics,
+      mrr: Math.round(metrics.mrr),
+      mrrTrend: buildMrrTrend(metrics.mrr),
+    };
   },
   { requiredRole: "super_admin" },
 );
@@ -37,7 +67,19 @@ export const listTenants = withAuth(
   async (
     filters?: ListTenantsFilters,
   ): Promise<{ tenants: TenantSaasSummary[]; total: number }> => {
-    return superAdminService.listTenants(filters);
+    const result = await superAdminService.listTenants(filters);
+    return {
+      total: result.total,
+      tenants: result.tenants.map((t) => ({
+        id: t.id,
+        name: t.name,
+        plan: mapPlan(t.plan),
+        status: mapStatus(t.status),
+        rooms: t.rooms,
+        mrr: Math.round(t.mrr),
+        joinedAt: t.joinedAt,
+      })),
+    };
   },
   { requiredRole: "super_admin" },
 );
