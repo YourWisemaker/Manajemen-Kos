@@ -545,7 +545,13 @@ function TimTab() {
 /* Langganan Tab                                                                */
 /* -------------------------------------------------------------------------- */
 
-function LanggananTab({ settings, currentRooms }: { settings: TenantSettings; currentRooms: number }) {
+function LanggananTab({
+  settings,
+  currentRooms,
+}: {
+  settings: TenantSettings;
+  currentRooms: number;
+}) {
   const planLabels: Record<string, string> = {
     starter: "Starter",
     pro: "Pro",

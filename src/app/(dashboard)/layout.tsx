@@ -1,8 +1,8 @@
 import { headers } from "next/headers";
 
 import { AppShell } from "@/components/shells/app-shell";
-import { MockTenantProvider, SessionTenantProvider } from "@/lib/tenant";
 import type { TenantRole } from "@/lib/tenant";
+import { MockTenantProvider, SessionTenantProvider } from "@/lib/tenant";
 
 /**
  * Dashboard route group layout
@@ -17,7 +17,9 @@ import type { TenantRole } from "@/lib/tenant";
  */
 export default async function DashboardLayout({
   children,
-}: { children: React.ReactNode }) {
+}: {
+  children: React.ReactNode;
+}) {
   const headerStore = await headers();
   const tenantId = headerStore.get("x-tenant-id");
   const userRole = headerStore.get("x-user-role") as TenantRole | null;
@@ -25,9 +27,7 @@ export default async function DashboardLayout({
   // If middleware resolved a real tenant session, use the session-based provider.
   // This fetches the tenant settings from the database for the resolved tenant.
   if (tenantId && userRole) {
-    const { getTenantSettings } = await import(
-      "@/app/(dashboard)/pengaturan/actions"
-    );
+    const { getTenantSettings } = await import("@/app/(dashboard)/pengaturan/actions");
 
     try {
       const settings = await getTenantSettings();

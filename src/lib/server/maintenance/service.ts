@@ -71,8 +71,7 @@ export class MaintenanceService {
     return withTenantDb(tenantId, async (db) => {
       const conditions = [eq(maintenanceRequest.tenantId, tenantId)];
       if (filters?.roomId) conditions.push(eq(maintenanceRequest.roomId, filters.roomId));
-      if (filters?.status)
-        conditions.push(eq(maintenanceRequest.status, filters.status));
+      if (filters?.status) conditions.push(eq(maintenanceRequest.status, filters.status));
 
       return db
         .select()

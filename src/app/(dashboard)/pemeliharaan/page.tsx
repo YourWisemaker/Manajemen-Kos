@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2, Plus, Search, Wrench } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { EntityStatus } from "@/components/brand";
 import { EmptyState, StatusBadge } from "@/components/brand";
@@ -82,16 +82,16 @@ export default function PemeliharaanPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<MaintenanceItem | null>(null);
 
-  function loadData(filter?: { status?: string }) {
+  const loadData = useCallback((filter?: { status?: string }) => {
     const queryFilter = filter?.status && filter.status !== "semua" ? filter : undefined;
     listMaintenanceRequests(queryFilter).then((data) =>
       setRequests(data as MaintenanceItem[]),
     );
-  }
+  }, []);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   const filtered = useMemo(() => {
     if (!requests) return [];
@@ -264,9 +264,7 @@ export default function PemeliharaanPage() {
 function PageHeader({ onCreate }: { onCreate: () => void }) {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <h1 className="font-display text-xl font-semibold text-foreground">
-        Pemeliharaan
-      </h1>
+      <h1 className="font-display text-xl font-semibold text-foreground">Pemeliharaan</h1>
       <Button iconLeft={Plus} onClick={onCreate}>
         Buat Permintaan
       </Button>
@@ -374,10 +372,7 @@ function CreateMaintenanceDialog({
             )}
 
             <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="maint-desc"
-                className="text-sm font-medium text-foreground"
-              >
+              <label htmlFor="maint-desc" className="text-sm font-medium text-foreground">
                 Deskripsi Masalah
               </label>
               <textarea
@@ -487,10 +482,7 @@ function MaintenanceDetailDialog({
                     Mulai Kerjakan
                   </Button>
                 )}
-                <Button
-                  size="sm"
-                  onClick={() => onStatusChange(item.id, "resolved")}
-                >
+                <Button size="sm" onClick={() => onStatusChange(item.id, "resolved")}>
                   Tandai Selesai
                 </Button>
               </div>

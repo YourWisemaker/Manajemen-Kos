@@ -35,16 +35,16 @@ export {
   type RoleGateProps,
   usePermissions,
 } from "./rbac";
+export { SessionTenantProvider } from "./session-tenant-provider";
 export {
   DEFAULT_TENANT,
   MockTenantProvider,
   type MockTenantProviderProps,
   ROLE_LABELS,
-  TenantContext,
   type TenantBranding,
+  TenantContext,
   type TenantContextValue,
   type TenantRole,
   type UserRole,
   useTenant,
 } from "./tenant-context";
-export { SessionTenantProvider } from "./session-tenant-provider";

@@ -12,7 +12,12 @@
 
 import { type ReactNode, useMemo, useState } from "react";
 import type { TenantSettings } from "@/lib/data";
-import { TenantContext, type TenantBranding, type TenantContextValue, type TenantRole } from "./tenant-context";
+import {
+  type TenantBranding,
+  TenantContext,
+  type TenantContextValue,
+  type TenantRole,
+} from "./tenant-context";
 
 interface SessionTenantProviderProps {
   children: ReactNode;
@@ -54,9 +59,5 @@ export function SessionTenantProvider({
     [tenant, role],
   );
 
-  return (
-    <TenantContext.Provider value={value}>
-      {children}
-    </TenantContext.Provider>
-  );
+  return <TenantContext.Provider value={value}>{children}</TenantContext.Provider>;
 }
