@@ -14,7 +14,7 @@ import crypto from "node:crypto";
 import type { Invoice, InvoiceFilter } from "@/lib/data";
 import { withAuth } from "@/lib/server/auth/rbac";
 import { RealDataSource } from "@/lib/server/datasource";
-import { getDb } from "@/lib/server/db";
+import { withTenantDb } from "@/lib/server/db";
 import { invoice, invoiceLine } from "@/lib/server/db/schema";
 import { requireTenantId } from "@/lib/server/tenant";
 
@@ -42,7 +42,7 @@ export const listInvoices = withAuth(
     const tenantId = requireTenantId();
     return dataSource.listInvoices(tenantId, filter);
   },
-  { requiredPermission: "invoice:write" },
+  { requiredPermission: "report:read" },
 );
 
 // ---------------------------------------------------------------------------
@@ -53,7 +53,6 @@ export const listInvoices = withAuth(
 export const createInvoice = withAuth(
   async (data: CreateInvoiceInput): Promise<{ id: string }> => {
     const tenantId = requireTenantId();
-    const db = getDb();
 
     // Generate invoice number (INV-YYYY-random)
     const year = new Date().getFullYear();
@@ -66,35 +65,37 @@ export const createInvoice = withAuth(
     // Calculate total from lines
     const total = data.lines.reduce((sum, line) => sum + line.amount, 0);
 
-    // Insert invoice
-    const [created] = await db
-      .insert(invoice)
-      .values({
-        tenantId,
-        contractId: data.contractId,
-        invoiceNumber,
-        paymentLinkToken,
-        periodStart: data.periodStart,
-        periodEnd: data.periodEnd,
-        dueDate: data.dueDate,
-        total: total.toFixed(2),
-        status: "tertagih",
-      })
-      .returning({ id: invoice.id });
-
-    // Insert line items
-    if (data.lines.length > 0) {
-      await db.insert(invoiceLine).values(
-        data.lines.map((line) => ({
+    return withTenantDb(tenantId, async (db) => {
+      // Insert invoice
+      const [created] = await db
+        .insert(invoice)
+        .values({
           tenantId,
-          invoiceId: created.id,
-          description: line.description,
-          amount: line.amount.toFixed(2),
-        })),
-      );
-    }
+          contractId: data.contractId,
+          invoiceNumber,
+          paymentLinkToken,
+          periodStart: data.periodStart,
+          periodEnd: data.periodEnd,
+          dueDate: data.dueDate,
+          total: total.toFixed(2),
+          status: "tertagih",
+        })
+        .returning({ id: invoice.id });
 
-    return { id: created.id };
+      // Insert line items
+      if (data.lines.length > 0) {
+        await db.insert(invoiceLine).values(
+          data.lines.map((line) => ({
+            tenantId,
+            invoiceId: created.id,
+            description: line.description,
+            amount: line.amount.toFixed(2),
+          })),
+        );
+      }
+
+      return { id: created.id };
+    });
   },
   { requiredPermission: "invoice:write" },
 );

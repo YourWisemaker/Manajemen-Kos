@@ -14,7 +14,7 @@ import { and, eq } from "drizzle-orm";
 import type { Resident } from "@/lib/data";
 import { withAuth } from "@/lib/server/auth/rbac";
 import { RealDataSource } from "@/lib/server/datasource";
-import { getDb } from "@/lib/server/db";
+import { withTenantDb } from "@/lib/server/db";
 import { kosTenant } from "@/lib/server/db/schema";
 import { requireTenantId } from "@/lib/server/tenant";
 
@@ -52,7 +52,7 @@ export const listResidents = withAuth(
     const tenantId = requireTenantId();
     return dataSource.listResidents(tenantId);
   },
-  { requiredPermission: "resident:write" },
+  { requiredPermission: "report:read" },
 );
 
 // ---------------------------------------------------------------------------
@@ -63,22 +63,23 @@ export const listResidents = withAuth(
 export const createResident = withAuth(
   async (data: CreateResidentInput): Promise<{ id: string }> => {
     const tenantId = requireTenantId();
-    const db = getDb();
 
-    const [created] = await db
-      .insert(kosTenant)
-      .values({
-        tenantId,
-        fullName: data.fullName,
-        ktpNumber: data.ktpNumber,
-        phone: data.phone,
-        email: data.email ?? null,
-        emergencyContact: data.emergencyContact ?? null,
-        ktpImageKey: data.ktpImageKey ?? null,
-      })
-      .returning({ id: kosTenant.id });
+    return withTenantDb(tenantId, async (db) => {
+      const [created] = await db
+        .insert(kosTenant)
+        .values({
+          tenantId,
+          fullName: data.fullName,
+          ktpNumber: data.ktpNumber,
+          phone: data.phone,
+          email: data.email ?? null,
+          emergencyContact: data.emergencyContact ?? null,
+          ktpImageKey: data.ktpImageKey ?? null,
+        })
+        .returning({ id: kosTenant.id });
 
-    return { id: created.id };
+      return { id: created.id };
+    });
   },
   { requiredPermission: "resident:write" },
 );
@@ -91,12 +92,13 @@ export const createResident = withAuth(
 export const updateResident = withAuth(
   async (id: string, data: UpdateResidentInput): Promise<void> => {
     const tenantId = requireTenantId();
-    const db = getDb();
 
-    await db
-      .update(kosTenant)
-      .set({ ...data, updatedAt: new Date() })
-      .where(and(eq(kosTenant.id, id), eq(kosTenant.tenantId, tenantId)));
+    await withTenantDb(tenantId, async (db) => {
+      await db
+        .update(kosTenant)
+        .set({ ...data, updatedAt: new Date() })
+        .where(and(eq(kosTenant.id, id), eq(kosTenant.tenantId, tenantId)));
+    });
   },
   { requiredPermission: "resident:write" },
 );

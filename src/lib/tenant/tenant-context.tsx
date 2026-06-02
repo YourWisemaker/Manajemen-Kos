@@ -70,7 +70,7 @@ export interface MockTenantProviderProps {
 /** The default active tenant — the mock primary tenant ("Kos Bunga Melati"). */
 export const DEFAULT_TENANT: TenantSettings = PRIMARY_TENANT_SEED.settings;
 
-const TenantContext = createContext<TenantContextValue | null>(null);
+export const TenantContext = createContext<TenantContextValue | null>(null);
 
 /** Derive the convenience branding subset from a tenant's settings. */
 function toBranding(tenant: TenantSettings): TenantBranding {
@@ -111,7 +111,10 @@ export function MockTenantProvider({
 /**
  * Read the active tenant, current role, and branding from context.
  *
- * @throws if called outside a {@link MockTenantProvider}.
+ * Works with both SessionTenantProvider (real auth) and MockTenantProvider,
+ * since both write to the same TenantContext.
+ *
+ * @throws if called outside a provider.
  */
 export function useTenant(): TenantContextValue {
   const value = useContext(TenantContext);

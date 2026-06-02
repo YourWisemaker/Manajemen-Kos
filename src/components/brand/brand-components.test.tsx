@@ -56,7 +56,7 @@ describe("StatusBadge maps every EntityStatus to a defined tone (Req 2.5)", () =
 
   it("covers all 16 declared statuses without gaps", () => {
     // Guards that the iterable used by the property matches the union size.
-    expect(ENTITY_STATUSES).toHaveLength(16);
+    expect(ENTITY_STATUSES).toHaveLength(19);
     for (const status of ENTITY_STATUSES) {
       expect(getStatusStyle(status)).toBeDefined();
     }

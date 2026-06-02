@@ -14,7 +14,7 @@ import { and, eq } from "drizzle-orm";
 import type { Property, Room } from "@/lib/data";
 import { withAuth } from "@/lib/server/auth/rbac";
 import { RealDataSource } from "@/lib/server/datasource";
-import { getDb } from "@/lib/server/db";
+import { withTenantDb } from "@/lib/server/db";
 import { property } from "@/lib/server/db/schema";
 import { requireTenantId } from "@/lib/server/tenant";
 
@@ -46,7 +46,7 @@ export const listProperties = withAuth(
     const tenantId = requireTenantId();
     return dataSource.listProperties(tenantId);
   },
-  { requiredPermission: "property:write" },
+  { requiredPermission: "report:read" },
 );
 
 // ---------------------------------------------------------------------------
@@ -59,7 +59,7 @@ export const listRooms = withAuth(
     const tenantId = requireTenantId();
     return dataSource.listRooms(tenantId, propertyId);
   },
-  { requiredPermission: "property:write" },
+  { requiredPermission: "report:read" },
 );
 
 // ---------------------------------------------------------------------------
@@ -70,20 +70,21 @@ export const listRooms = withAuth(
 export const createProperty = withAuth(
   async (data: CreatePropertyInput): Promise<{ id: string }> => {
     const tenantId = requireTenantId();
-    const db = getDb();
 
-    const [created] = await db
-      .insert(property)
-      .values({
-        tenantId,
-        name: data.name,
-        address: data.address,
-        city: data.city,
-        totalRooms: 0,
-      })
-      .returning({ id: property.id });
+    return withTenantDb(tenantId, async (db) => {
+      const [created] = await db
+        .insert(property)
+        .values({
+          tenantId,
+          name: data.name,
+          address: data.address,
+          city: data.city,
+          totalRooms: 0,
+        })
+        .returning({ id: property.id });
 
-    return { id: created.id };
+      return { id: created.id };
+    });
   },
   { requiredPermission: "property:write" },
 );
@@ -96,12 +97,13 @@ export const createProperty = withAuth(
 export const updateProperty = withAuth(
   async (id: string, data: UpdatePropertyInput): Promise<void> => {
     const tenantId = requireTenantId();
-    const db = getDb();
 
-    await db
-      .update(property)
-      .set({ ...data, updatedAt: new Date() })
-      .where(and(eq(property.id, id), eq(property.tenantId, tenantId)));
+    await withTenantDb(tenantId, async (db) => {
+      await db
+        .update(property)
+        .set({ ...data, updatedAt: new Date() })
+        .where(and(eq(property.id, id), eq(property.tenantId, tenantId)));
+    });
   },
   { requiredPermission: "property:write" },
 );

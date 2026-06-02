@@ -29,7 +29,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Resident } from "@/lib/data";
 import copy from "@/lib/locale/copy/id";
 import { residentSchema, submitHandler, useZodForm } from "@/lib/schemas";
-import { listResidents } from "./actions";
+import { createResident, listResidents } from "./actions";
 
 /**
  * Penghuni (Resident) Management Page — Task 14
@@ -320,6 +320,7 @@ interface AddResidentDialogProps {
 }
 
 function AddResidentDialog({ open, onOpenChange }: AddResidentDialogProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const form = useZodForm(residentSchema, {
     defaultValues: {
       fullName: "",
@@ -342,9 +343,24 @@ function AddResidentDialog({ open, onOpenChange }: AddResidentDialogProps) {
     onOpenChange(false);
   }
 
-  const onSubmit = submitHandler(form, () => {
-    // Mock — no real persistence. Just close the dialog.
-    handleClose();
+  const onSubmit = submitHandler(form, async (data) => {
+    setIsSubmitting(true);
+    try {
+      await createResident({
+        fullName: data.fullName,
+        ktpNumber: data.ktpNumber,
+        phone: data.phone,
+        email: data.email || undefined,
+        emergencyContact: data.emergencyContact || undefined,
+      });
+      handleClose();
+      // Refresh the page to show new resident
+      window.location.reload();
+    } catch (err) {
+      console.error("Failed to create resident:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
   });
 
   return (
@@ -411,7 +427,9 @@ function AddResidentDialog({ open, onOpenChange }: AddResidentDialogProps) {
             <Button type="button" variant="ghost" onClick={handleClose}>
               {copy.aksi.batal}
             </Button>
-            <Button type="submit">{copy.aksi.simpan}</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Menyimpan…" : copy.aksi.simpan}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

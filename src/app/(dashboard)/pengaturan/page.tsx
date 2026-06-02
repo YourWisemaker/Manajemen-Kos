@@ -14,7 +14,7 @@ import type { TenantSettings } from "@/lib/data";
 import copy from "@/lib/locale/copy/id";
 import { subdomainSchema } from "@/lib/schemas";
 import { OwnerAction } from "@/lib/tenant";
-import { getTenantSettings } from "./actions";
+import { getTenantSettings, updateTenantSettings } from "./actions";
 
 /**
  * Tenant Settings Page — Task 20
@@ -28,9 +28,17 @@ import { getTenantSettings } from "./actions";
 
 export default function PengaturanPage() {
   const [settings, setSettings] = useState<TenantSettings | null>(null);
+  const [totalRooms, setTotalRooms] = useState<number>(0);
 
   useEffect(() => {
     getTenantSettings().then(setSettings);
+    // Fetch total room count from properties for the Langganan tab
+    import("../properti/actions").then(({ listProperties }) =>
+      listProperties().then((properties) => {
+        const total = properties.reduce((sum, p) => sum + p.totalRooms, 0);
+        setTotalRooms(total);
+      }),
+    );
   }, []);
 
   if (!settings) {
@@ -76,7 +84,7 @@ export default function PengaturanPage() {
           </TabsContent>
 
           <TabsContent value="langganan" className="mt-4">
-            <LanggananTab settings={settings} />
+            <LanggananTab settings={settings} currentRooms={totalRooms} />
           </TabsContent>
 
           <TabsContent value="lanjutan" className="mt-4">
@@ -103,6 +111,7 @@ function ProfilBisnisTab({
   const [name, setName] = useState(settings.name);
   const [subdomain, setSubdomain] = useState(settings.subdomain);
   const [subdomainError, setSubdomainError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   function handleColorChange(color: string) {
     setBrandColor(color);
@@ -113,6 +122,18 @@ function ProfilBisnisTab({
     setSubdomain(value);
     const result = subdomainSchema.safeParse(value);
     setSubdomainError(result.success ? null : (result.error.issues[0]?.message ?? null));
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await updateTenantSettings({ name, brandColor });
+      onSettingsChange({ ...settings, name, brandColor });
+    } catch (err) {
+      console.error("Failed to save settings:", err);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -193,7 +214,9 @@ function ProfilBisnisTab({
             </div>
           </div>
 
-          <Button className="self-start mt-2">{copy.aksi.simpan}</Button>
+          <Button className="self-start mt-2" onClick={handleSave} disabled={saving}>
+            {saving ? "Menyimpan…" : copy.aksi.simpan}
+          </Button>
         </CardContent>
       </Card>
 
@@ -364,6 +387,7 @@ function WhatsAppTemplateTab({ settings }: { settings: TenantSettings }) {
     "invoiceIssued" | "paymentSuccess" | "reminder"
   >("invoiceIssued");
   const [templates, setTemplates] = useState(settings.waTemplates);
+  const [saving, setSaving] = useState(false);
 
   const templateLabels = {
     invoiceIssued: "Tagihan Terbit",
@@ -387,6 +411,17 @@ function WhatsAppTemplateTab({ settings }: { settings: TenantSettings }) {
       result = result.replaceAll(key, value);
     }
     return result;
+  }
+
+  async function handleSaveTemplates() {
+    setSaving(true);
+    try {
+      await updateTenantSettings({ waTemplates: templates });
+    } catch (err) {
+      console.error("Failed to save WA templates:", err);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -432,7 +467,9 @@ function WhatsAppTemplateTab({ settings }: { settings: TenantSettings }) {
             className="w-full rounded-input border border-line bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
           />
 
-          <Button className="self-start">{copy.aksi.simpan}</Button>
+          <Button className="self-start" onClick={handleSaveTemplates} disabled={saving}>
+            {saving ? "Menyimpan…" : copy.aksi.simpan}
+          </Button>
         </CardContent>
       </Card>
 
@@ -508,7 +545,7 @@ function TimTab() {
 /* Langganan Tab                                                                */
 /* -------------------------------------------------------------------------- */
 
-function LanggananTab({ settings }: { settings: TenantSettings }) {
+function LanggananTab({ settings, currentRooms }: { settings: TenantSettings; currentRooms: number }) {
   const planLabels: Record<string, string> = {
     starter: "Starter",
     pro: "Pro",
@@ -522,8 +559,6 @@ function LanggananTab({ settings }: { settings: TenantSettings }) {
   };
 
   const roomLimit = planLimits[settings.plan] ?? 15;
-  // Mock current usage
-  const currentRooms = 8;
   const usagePct = Math.min((currentRooms / roomLimit) * 100, 100);
 
   return (

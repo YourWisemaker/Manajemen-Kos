@@ -36,7 +36,10 @@ export type EntityStatus =
   | "berhenti"
   | "keluar"
   | "berakhir"
-  | "diputus";
+  | "diputus"
+  | "open"
+  | "in_progress"
+  | "resolved";
 
 /** The named status color families used by badges, rows, and charts. */
 export type StatusTone = "success" | "warning" | "danger" | "info" | "neutral";
@@ -91,6 +94,10 @@ const STATUS_MAP: Record<EntityStatus, StatusStyle> = {
   // Contracts.
   berakhir: { tone: "neutral", label: "Berakhir" },
   diputus: { tone: "danger", label: "Diputus" },
+  // Maintenance requests.
+  open: { tone: "warning", label: "Baru" },
+  in_progress: { tone: "info", label: "Dikerjakan" },
+  resolved: { tone: "success", label: "Selesai" },
 };
 
 export interface StatusBadgeProps {

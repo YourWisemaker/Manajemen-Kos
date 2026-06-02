@@ -37,7 +37,7 @@ export const listMaintenanceRequests = withAuth(
     const tenantId = requireTenantId();
     return maintenanceService.list(tenantId, filters);
   },
-  { requiredPermission: "property:write" },
+  { requiredPermission: "report:read" },
 );
 
 export const getMaintenanceRequest = withAuth(
@@ -45,5 +45,5 @@ export const getMaintenanceRequest = withAuth(
     const tenantId = requireTenantId();
     return maintenanceService.getById(tenantId, requestId);
   },
-  { requiredPermission: "property:write" },
+  { requiredPermission: "report:read" },
 );

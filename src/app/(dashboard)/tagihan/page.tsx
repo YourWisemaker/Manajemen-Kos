@@ -30,7 +30,7 @@ import type { Invoice, Property } from "@/lib/data";
 import copy from "@/lib/locale/copy/id";
 import { formatTanggal, relativeJatuhTempo } from "@/lib/locale/datetime";
 import { listProperties } from "../properti/actions";
-import { listInvoices } from "./actions";
+import { createInvoice, listInvoices } from "./actions";
 import {
   ALL_FILTER,
   buildInvoiceFilter,
@@ -499,10 +499,46 @@ interface CreateInvoiceDialogProps {
 
 function CreateInvoiceDialog({ open, onOpenChange }: CreateInvoiceDialogProps) {
   const [done, setDone] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [contractId, setContractId] = useState("");
+  const [periodStart, setPeriodStart] = useState("");
+  const [periodEnd, setPeriodEnd] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [description, setDescription] = useState("Sewa Kamar");
+  const [amount, setAmount] = useState("");
 
   function handleOpenChange(next: boolean) {
-    if (!next) setDone(false);
+    if (!next) {
+      setDone(false);
+      setContractId("");
+      setPeriodStart("");
+      setPeriodEnd("");
+      setDueDate("");
+      setDescription("Sewa Kamar");
+      setAmount("");
+    }
     onOpenChange(next);
+  }
+
+  async function handleCreate() {
+    const parsedAmount = Number.parseInt(amount.replace(/\D/g, ""), 10);
+    if (!contractId || !periodStart || !periodEnd || !dueDate || !parsedAmount) return;
+
+    setLoading(true);
+    try {
+      await createInvoice({
+        contractId,
+        periodStart,
+        periodEnd,
+        dueDate,
+        lines: [{ description, amount: parsedAmount }],
+      });
+      setDone(true);
+    } catch (err) {
+      console.error("Failed to create invoice:", err);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -511,8 +547,7 @@ function CreateInvoiceDialog({ open, onOpenChange }: CreateInvoiceDialogProps) {
         <DialogHeader>
           <DialogTitle>Buat Tagihan</DialogTitle>
           <DialogDescription>
-            Buat tagihan baru untuk penghuni. Fitur ini akan terhubung ke backend di fase
-            berikutnya.
+            Buat tagihan baru untuk penghuni berdasarkan kontrak aktif.
           </DialogDescription>
         </DialogHeader>
 
@@ -520,20 +555,54 @@ function CreateInvoiceDialog({ open, onOpenChange }: CreateInvoiceDialogProps) {
           <SuccessNotice message="Tagihan berhasil dibuat." />
         ) : (
           <div className="flex flex-col gap-4">
-            <FormField label="Penghuni" name="resident">
-              <Input id="resident" placeholder="Pilih penghuni" />
+            <FormField label="ID Kontrak" name="contractId">
+              <Input
+                id="contractId"
+                value={contractId}
+                onChange={(e) => setContractId(e.target.value)}
+                placeholder="Masukkan ID kontrak"
+              />
             </FormField>
-            <FormField label="Kamar" name="room">
-              <Input id="room" placeholder="Nomor kamar" />
+            <FormField label="Deskripsi" name="desc">
+              <Input
+                id="desc"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Sewa Kamar"
+              />
             </FormField>
             <FormField label="Periode Mulai" name="periodStart">
-              <Input id="periodStart" type="date" />
+              <Input
+                id="periodStart"
+                type="date"
+                value={periodStart}
+                onChange={(e) => setPeriodStart(e.target.value)}
+              />
             </FormField>
             <FormField label="Periode Akhir" name="periodEnd">
-              <Input id="periodEnd" type="date" />
+              <Input
+                id="periodEnd"
+                type="date"
+                value={periodEnd}
+                onChange={(e) => setPeriodEnd(e.target.value)}
+              />
+            </FormField>
+            <FormField label="Jatuh Tempo" name="dueDate">
+              <Input
+                id="dueDate"
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+              />
             </FormField>
             <FormField label="Jumlah (Rp)" name="amount">
-              <Input id="amount" placeholder="Contoh: 1.500.000" inputMode="numeric" />
+              <Input
+                id="amount"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="Contoh: 1500000"
+                inputMode="numeric"
+              />
             </FormField>
           </div>
         )}
@@ -552,8 +621,8 @@ function CreateInvoiceDialog({ open, onOpenChange }: CreateInvoiceDialogProps) {
               >
                 {copy.aksi.batal}
               </Button>
-              <Button type="button" onClick={() => setDone(true)}>
-                {copy.aksi.simpan}
+              <Button type="button" onClick={handleCreate} disabled={loading}>
+                {loading ? "Menyimpan…" : copy.aksi.simpan}
               </Button>
             </>
           )}

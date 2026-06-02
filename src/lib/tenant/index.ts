@@ -40,9 +40,11 @@ export {
   MockTenantProvider,
   type MockTenantProviderProps,
   ROLE_LABELS,
+  TenantContext,
   type TenantBranding,
   type TenantContextValue,
   type TenantRole,
   type UserRole,
   useTenant,
 } from "./tenant-context";
+export { SessionTenantProvider } from "./session-tenant-provider";

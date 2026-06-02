@@ -17,7 +17,7 @@ import type { Contract } from "@/lib/data";
 import { withAuth } from "@/lib/server/auth/rbac";
 import { billingEngine } from "@/lib/server/billing/engine";
 import { RealDataSource } from "@/lib/server/datasource";
-import { getDb } from "@/lib/server/db";
+import { withTenantDb } from "@/lib/server/db";
 import { contract, room } from "@/lib/server/db/schema";
 import { requireTenantId } from "@/lib/server/tenant";
 
@@ -59,36 +59,37 @@ export interface TerminateContractResult {
 export const createContract = withAuth(
   async (data: CreateContractInput): Promise<{ id: string; invoiceId: string }> => {
     const tenantId = requireTenantId();
-    const db = getDb();
 
-    // 1. Create contract record
-    const [created] = await db
-      .insert(contract)
-      .values({
-        tenantId,
-        roomId: data.roomId,
-        kosTenantId: data.kosTenantId,
-        startDate: data.startDate,
-        endDate: data.endDate,
-        depositAmount: data.depositAmount.toFixed(2),
-        monthlyPrice: data.monthlyPrice.toFixed(2),
-        status: "active",
-      })
-      .returning();
+    return withTenantDb(tenantId, async (db) => {
+      // 1. Create contract record
+      const [created] = await db
+        .insert(contract)
+        .values({
+          tenantId,
+          roomId: data.roomId,
+          kosTenantId: data.kosTenantId,
+          startDate: data.startDate,
+          endDate: data.endDate,
+          depositAmount: data.depositAmount.toFixed(2),
+          monthlyPrice: data.monthlyPrice.toFixed(2),
+          status: "active",
+        })
+        .returning();
 
-    // 2. Record deposit via billing engine — Req 16.1
-    await billingEngine.recordDeposit(created.id, data.depositAmount);
+      // 2. Record deposit via billing engine — Req 16.1
+      await billingEngine.recordDeposit(created.id, data.depositAmount);
 
-    // 3. Generate prorated invoice for mid-month check-in — Req 16.1
-    const invoiceId = await billingEngine.generateProratedInvoice(created.id);
+      // 3. Generate prorated invoice for mid-month check-in — Req 16.1
+      const invoiceId = await billingEngine.generateProratedInvoice(created.id);
 
-    // 4. Update room status to "terisi" — Req 16.4
-    await db
-      .update(room)
-      .set({ status: "terisi", updatedAt: new Date() })
-      .where(and(eq(room.id, data.roomId), eq(room.tenantId, tenantId)));
+      // 4. Update room status to "terisi" — Req 16.4
+      await db
+        .update(room)
+        .set({ status: "terisi", updatedAt: new Date() })
+        .where(and(eq(room.id, data.roomId), eq(room.tenantId, tenantId)));
 
-    return { id: created.id, invoiceId };
+      return { id: created.id, invoiceId };
+    });
   },
   { requiredPermission: "contract:write" },
 );
@@ -107,41 +108,42 @@ export const createContract = withAuth(
 export const terminateContract = withAuth(
   async (contractId: string): Promise<TerminateContractResult> => {
     const tenantId = requireTenantId();
-    const db = getDb();
 
-    // Fetch current contract
-    const [existing] = await db
-      .select()
-      .from(contract)
-      .where(and(eq(contract.id, contractId), eq(contract.tenantId, tenantId)));
+    return withTenantDb(tenantId, async (db) => {
+      // Fetch current contract
+      const [existing] = await db
+        .select()
+        .from(contract)
+        .where(and(eq(contract.id, contractId), eq(contract.tenantId, tenantId)));
 
-    if (!existing) {
-      throw new Error(`Contract ${contractId} not found`);
-    }
+      if (!existing) {
+        throw new Error(`Contract ${contractId} not found`);
+      }
 
-    // Enforce status transition — Req 16.3
-    if (existing.status !== "active") {
-      throw new Error(
-        `Cannot terminate contract with status "${existing.status}". Only active contracts can be terminated.`,
-      );
-    }
+      // Enforce status transition — Req 16.3
+      if (existing.status !== "active") {
+        throw new Error(
+          `Cannot terminate contract with status "${existing.status}". Only active contracts can be terminated.`,
+        );
+      }
 
-    // Calculate deposit refund — Req 16.2
-    const refund = await billingEngine.calculateDepositRefund(contractId);
+      // Calculate deposit refund — Req 16.2
+      const refund = await billingEngine.calculateDepositRefund(contractId);
 
-    // Update contract status to "terminated" — Req 16.3
-    await db
-      .update(contract)
-      .set({ status: "terminated", updatedAt: new Date() })
-      .where(eq(contract.id, contractId));
+      // Update contract status to "terminated" — Req 16.3
+      await db
+        .update(contract)
+        .set({ status: "terminated", updatedAt: new Date() })
+        .where(eq(contract.id, contractId));
 
-    // Update room status to "tersedia" — Req 16.5
-    await db
-      .update(room)
-      .set({ status: "tersedia", updatedAt: new Date() })
-      .where(and(eq(room.id, existing.roomId), eq(room.tenantId, tenantId)));
+      // Update room status to "tersedia" — Req 16.5
+      await db
+        .update(room)
+        .set({ status: "tersedia", updatedAt: new Date() })
+        .where(and(eq(room.id, existing.roomId), eq(room.tenantId, tenantId)));
 
-    return { contractId, refund };
+      return { contractId, refund };
+    });
   },
   { requiredPermission: "contract:write" },
 );
@@ -156,5 +158,5 @@ export const listContracts = withAuth(
     const tenantId = requireTenantId();
     return dataSource.listContracts(tenantId);
   },
-  { requiredPermission: "contract:write" },
+  { requiredPermission: "report:read" },
 );

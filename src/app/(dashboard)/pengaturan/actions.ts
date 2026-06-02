@@ -14,7 +14,7 @@ import { eq } from "drizzle-orm";
 import type { TenantSettings } from "@/lib/data";
 import { withAuth } from "@/lib/server/auth/rbac";
 import { RealDataSource } from "@/lib/server/datasource";
-import { getDb } from "@/lib/server/db";
+import { withTenantDb } from "@/lib/server/db";
 import { tenantSaas } from "@/lib/server/db/schema";
 import { requireTenantId } from "@/lib/server/tenant";
 
@@ -56,42 +56,43 @@ export const getTenantSettings = withAuth(
 export const updateTenantSettings = withAuth(
   async (data: UpdateTenantSettingsInput): Promise<void> => {
     const tenantId = requireTenantId();
-    const db = getDb();
 
-    // Fetch current settings to merge
-    const [current] = await db
-      .select({ settings: tenantSaas.settings })
-      .from(tenantSaas)
-      .where(eq(tenantSaas.id, tenantId));
+    await withTenantDb(tenantId, async (db) => {
+      // Fetch current settings to merge
+      const [current] = await db
+        .select({ settings: tenantSaas.settings })
+        .from(tenantSaas)
+        .where(eq(tenantSaas.id, tenantId));
 
-    const existingSettings = (current?.settings ?? {}) as Record<string, unknown>;
+      const existingSettings = (current?.settings ?? {}) as Record<string, unknown>;
 
-    // Build updated settings object
-    const updatedSettings = { ...existingSettings };
-    if (data.brandColor !== undefined) {
-      updatedSettings.brandColor = data.brandColor;
-    }
-    if (data.waTemplates !== undefined) {
-      const existingTemplates = (existingSettings.waTemplates ?? {}) as Record<
-        string,
-        string
-      >;
-      updatedSettings.waTemplates = { ...existingTemplates, ...data.waTemplates };
-    }
+      // Build updated settings object
+      const updatedSettings = { ...existingSettings };
+      if (data.brandColor !== undefined) {
+        updatedSettings.brandColor = data.brandColor;
+      }
+      if (data.waTemplates !== undefined) {
+        const existingTemplates = (existingSettings.waTemplates ?? {}) as Record<
+          string,
+          string
+        >;
+        updatedSettings.waTemplates = { ...existingTemplates, ...data.waTemplates };
+      }
 
-    // Build the update payload
-    const updatePayload: Record<string, unknown> = {
-      settings: updatedSettings,
-      updatedAt: new Date(),
-    };
-    if (data.name !== undefined) {
-      updatePayload.name = data.name;
-    }
-    if (data.logoUrl !== undefined) {
-      updatePayload.logoUrl = data.logoUrl;
-    }
+      // Build the update payload
+      const updatePayload: Record<string, unknown> = {
+        settings: updatedSettings,
+        updatedAt: new Date(),
+      };
+      if (data.name !== undefined) {
+        updatePayload.name = data.name;
+      }
+      if (data.logoUrl !== undefined) {
+        updatePayload.logoUrl = data.logoUrl;
+      }
 
-    await db.update(tenantSaas).set(updatePayload).where(eq(tenantSaas.id, tenantId));
+      await db.update(tenantSaas).set(updatePayload).where(eq(tenantSaas.id, tenantId));
+    });
   },
   { requiredPermission: "settings:write" },
 );
